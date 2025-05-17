@@ -1,0 +1,28 @@
+spring:
+  config:
+    import: optional:file:.env[.properties] # .env ??? ???? ??
+  datasource:
+    dev:
+      url: jdbc:mysql://${DEV_DB_HOST}:${DEV_DB_PORT}/${DEV_DB_NAME}?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+      username: ${DEV_DB_USERNAME}
+      password: ${DEV_DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+    crawling:
+      url: jdbc:mysql://${CRAWLING_DB_HOST}:${CRAWLING_DB_PORT}/${CRAWLING_DB_NAME}?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+      username: ${CRAWLING_DB_USERNAME}
+      password: ${CRAWLING_DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        hbm2ddl:
+          auto: create
+        default_batch_fetch_size: 1000
