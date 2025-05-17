@@ -24,7 +24,7 @@ public class SalePrice extends BaseEntity {
 
     private String productName;
 
-    private BigDecimal price;
+    private Integer price;
 
     private String site;
 
