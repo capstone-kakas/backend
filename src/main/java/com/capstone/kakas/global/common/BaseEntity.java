@@ -1,4 +1,4 @@
-package com.capstone.kakas.crawlingdb.domain.common;
+package com.capstone.kakas.global.common;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
