@@ -1,10 +1,16 @@
 package com.capstone.kakas.crawlingdb.domain;
 
 import com.capstone.kakas.global.common.BaseEntity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+@Entity
+@Getter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class CrawlingProduct extends BaseEntity {
 
     @Id
@@ -14,4 +20,10 @@ public class CrawlingProduct extends BaseEntity {
     private String name;
 
     private String category;
+
+    @OneToMany(mappedBy = "crawlingProduct", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SalePrice> salePrices = new ArrayList<>();
+
+    @OneToMany(mappedBy = "crawlingProduct", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UsedPrice> usedPrices = new ArrayList<>();
 }

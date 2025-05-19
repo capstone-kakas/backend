@@ -1,10 +1,7 @@
 package com.capstone.kakas.crawlingdb.domain;
 
 import com.capstone.kakas.global.common.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
@@ -23,5 +20,9 @@ public class SalePrice extends BaseEntity {
     private String site;
 
     private String siteUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "crawling_product_id")
+    private CrawlingProduct crawlingProduct;
     
 }
