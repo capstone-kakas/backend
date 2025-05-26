@@ -13,6 +13,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.*;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Configuration
 @EnableJpaRepositories(
         basePackages = "com.capstone.kakas.crawlingdb.repository",
@@ -24,17 +27,29 @@ public class CrawlingDataSourceConfig {
     @Bean(name = "crawlingDataSource")
     @ConfigurationProperties(prefix = "spring.datasource.crawling")
     public DataSource crawlingDataSource() {
-        return DataSourceBuilder.create().build();
+        return DataSourceBuilder.create()
+                .type(com.zaxxer.hikari.HikariDataSource.class) // 명시적 타입 지정
+                .build();
     }
 
     @Bean(name = "crawlingEntityManagerFactory")
     public LocalContainerEntityManagerFactoryBean crawlingEntityManagerFactory(
             EntityManagerFactoryBuilder builder,
             @Qualifier("crawlingDataSource") DataSource dataSource) {
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("hibernate.hbm2ddl.auto", "none");
+        properties.put("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
+        properties.put("hibernate.show_sql", true);
+        properties.put("hibernate.format_sql", true);
+        properties.put("hibernate.use_sql_comments", true);
+        properties.put("hibernate.default_batch_fetch_size", 1000);
+
         return builder
                 .dataSource(dataSource)
-                .packages("com.capstone.crawling.domain") // Entity 경로
+                .packages("com.capstone.kakas.crawlingdb.domain")
                 .persistenceUnit("crawling")
+                .properties(properties) // ✅ 여기!
                 .build();
     }
 
