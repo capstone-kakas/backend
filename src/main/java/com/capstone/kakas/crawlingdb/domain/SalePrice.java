@@ -1,28 +1,40 @@
 package com.capstone.kakas.crawlingdb.domain;
 
-import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
-@Getter
-@Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-public class SalePrice extends BaseEntity {
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
+
+@Entity
+@Table(name = "sale_price")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SalePrice {
+    /**
+     * 새상품 가격 저장 엔티티
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Integer price;
-
-    private String site;
-
-    private String siteUrl;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "model_code_id", nullable = false)
+    private ModelCode modelCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "crawling_product_id")
-    private CrawlingProduct crawlingProduct;
-    
+    @JoinColumn(name = "site_id", nullable = false)
+    private Site site;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
+
+    @Column(nullable = false, length = 10)
+    private String currency;
+
+    @Column(nullable = false)
+    private LocalDateTime crawledAt;
 }
