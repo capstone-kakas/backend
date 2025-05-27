@@ -1,11 +1,11 @@
 package com.capstone.kakas.crawlingdb.domain;
 
+import com.capstone.kakas.crawlingdb.domain.enums.SiteName;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.capstone.kakas.crawlingdb.domain.enums.SiteType;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ public class Site {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private SiteType type;
+    private SiteName siteName;
 
     @Column(nullable = false, length = 255)
     private String searchUrlTemplate;
