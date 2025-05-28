@@ -2,23 +2,22 @@ package com.capstone.kakas.crawlingdb.service;
 
 import com.capstone.kakas.crawlingdb.domain.Site;
 import com.capstone.kakas.crawlingdb.domain.enums.SiteName;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-/**
- * URL Builder: 사이트별 인코딩 및 URL 템플릿 치환
- */
-@Service
-@RequiredArgsConstructor
+
+@Component
 public class UrlBuilder {
-    public String buildSearchUrl(Site site, String rawQuery, int page) {
-        String encoded = encode(rawQuery, SiteName.valueOf(site.getName()));
-        return site.getSearchUrlTemplate()
-                .replace("{query}", encoded)
-                .replace("{page}", String.valueOf(page));
+
+    /**
+     * rawQuery 와 site.getSiteName() 을 받아서 encodeQuery(...) 를 호출합니다.
+     */
+    public String buildSearchUrl(String rawQuery, Site site) {
+        // 두 인자를 받는 메서드가 분명히 있어야 합니다
+        String encoded = encodeQuery(rawQuery, site.getSiteName());
+        return site.getSearchUrlTemplate().replace("{query}", encoded);
     }
 
-    private String encode(String query, SiteName siteName) {
+    private String encodeQuery(String query, SiteName siteName) {
         switch (siteName) {
             case GMARKET:
                 // UTF-8 encode, spaces as '+'
