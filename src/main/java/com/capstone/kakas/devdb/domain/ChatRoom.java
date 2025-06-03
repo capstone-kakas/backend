@@ -22,6 +22,8 @@ public class ChatRoom extends BaseEntity {
 
     private String content;
 
+    private String seller;
+
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_message_id", nullable = false)
     private List<ChatMessage> chatMessages = new ArrayList<>();
