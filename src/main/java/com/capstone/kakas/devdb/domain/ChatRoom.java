@@ -37,4 +37,8 @@ public class ChatRoom extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    // 연관관계 편의 메서드
+    public void setProduct(Product product) {
+        this.product = product;
+    }
 }
