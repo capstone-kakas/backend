@@ -41,4 +41,9 @@ public class ChatRoom extends BaseEntity {
     public void setProduct(Product product) {
         this.product = product;
     }
+
+    public void addChatMessage(ChatMessage message) {
+        chatMessages.add(message);
+        message.setChatRoom(this);
+    }
 }

@@ -36,5 +36,15 @@ public class ChatRoomRequestDto {
         private String message;
     }
 
-    
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class aiRequestDto {
+        private String productName;
+        private String title;
+        private String content;
+        private String message;
+    }
 }

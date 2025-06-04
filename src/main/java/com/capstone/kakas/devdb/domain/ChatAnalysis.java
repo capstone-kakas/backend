@@ -20,4 +20,10 @@ public class ChatAnalysis extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "chat_message_id")
     private ChatMessage chatMessage;
+
+
+    //연관관계 편의 메서드
+    public void setChatMessage(ChatMessage chatMessage) {
+        this.chatMessage = chatMessage;
+    }
 }

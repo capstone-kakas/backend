@@ -28,4 +28,15 @@ public class ChatMessage extends BaseEntity {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_analysis_id", nullable = false)
     private List<ChatAnalysis> chatAnalyses = new ArrayList<>();
+
+
+    //연관관계 편의메서드
+    public void setChatRoom(ChatRoom chatRoom) {
+        this.chatRoom = chatRoom;
+    }
+
+    public void addChatAnalysis(ChatAnalysis analysis) {
+        chatAnalyses.add(analysis);
+        analysis.setChatMessage(this);
+    }
 }

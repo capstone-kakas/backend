@@ -80,33 +80,42 @@ public class ChatRoomService {
         ChatRoom chatRoom = chatRoomRepository.findByTitle(request.getChatRoomTitle())
                 .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
 
-        // ChatRoom 조회 id로
+        // ChatRoom 조회 id로 -> 프론트와 협의
 //        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
 //                .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
 
 
         // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
-//        String productName = chatRoom.getProduct().getName();
+//        ChatRoomRequestDto.aiRequestDto aiRequestDto = ChatRoomRequestDto.aiRequestDto.builder()
+//                .title(chatRoom.getTitle())
+//                .content(chatRoom.getContent())
+//                .productName(chatRoom.getProduct().getName())
+//                .message(request.getMessage())
+//                .build();
+//        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
 //        String analysisResult =
+
         String analysisResult = "분석결과 temp";
+
+
+        // 채팅 메세지 저장
+        ChatMessage message = ChatMessage.builder()
+                .message(request.getMessage())
+//                .chatAnalyses(chatAnalysis)
+                .build();
+
+        chatRoom.addChatMessage(message);
 
 
         // chatAnalysis, chatMessage 저장 및 연관관계
         ChatAnalysis chatAnalysis = ChatAnalysis.builder()
                 .analysis(analysisResult)
                 .build();
+        message.addChatAnalysis(chatAnalysis);
 
 
-        chatAnalysisRepository.save(chatAnalysis);
-
-        // 채팅 메세지 저장
-        ChatMessage message = ChatMessage.builder()
-                .message(request.getMessage())
-//                .chatAnalyses(chatAnalysis)
-                .chatRoom(chatRoom)
-                .build();
-
-        chatMessageRepository.save(message);
+        //cascade때매 다 저장
+        chatRoomRepository.save(chatRoom);
 
 
         return analysisResult;
