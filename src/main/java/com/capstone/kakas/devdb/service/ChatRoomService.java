@@ -2,10 +2,14 @@ package com.capstone.kakas.devdb.service;
 
 import com.capstone.kakas.apiPayload.code.status.ErrorStatus;
 import com.capstone.kakas.apiPayload.exception.handler.TempHandler;
+import com.capstone.kakas.devdb.domain.ChatAnalysis;
+import com.capstone.kakas.devdb.domain.ChatMessage;
 import com.capstone.kakas.devdb.domain.ChatRoom;
 import com.capstone.kakas.devdb.domain.Product;
 import com.capstone.kakas.devdb.dto.request.ChatRoomRequestDto;
 import com.capstone.kakas.devdb.dto.response.ChatRoomResponseDto;
+import com.capstone.kakas.devdb.repository.ChatAnalysisRepository;
+import com.capstone.kakas.devdb.repository.ChatMessageRepository;
 import com.capstone.kakas.devdb.repository.ChatRoomRepository;
 import com.capstone.kakas.devdb.repository.DEVProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final DEVProductRepository productRepository;
+    private final ChatAnalysisRepository chatAnalysisRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
+    @Transactional
     public ChatRoomResponseDto.addChatRoomDto addChatRoom(ChatRoomRequestDto.createChatRoomDto request) {
 
 //        // 요청된 제목을 기반으로, 유사도가 높은 상품 이름 상위 5개를 가져온다
@@ -39,7 +46,7 @@ public class ChatRoomService {
 
     }
 
-
+    @Transactional
     public ChatRoomResponseDto.ChatRoomAssignProductDto assignProductToChatRoom(
             ChatRoomRequestDto.ChatRoomAssignProductDto request
     ) {
@@ -64,4 +71,44 @@ public class ChatRoomService {
                 .build();
     }
 
+    @Transactional
+    //특정 채팅방의 메세지를 분석하는 service
+//    public ChatRoomResponseDto.messageAnalysisResultDto messageAnalysis(ChatRoomRequestDto.messageAnalysisDto request){
+    public String messageAnalysis(ChatRoomRequestDto.messageAnalysisDto request){
+
+        // ChatRoom 조회 title로
+        ChatRoom chatRoom = chatRoomRepository.findByTitle(request.getChatRoomTitle())
+                .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
+
+        // ChatRoom 조회 id로
+//        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
+//                .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
+
+
+        // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
+//        String productName = chatRoom.getProduct().getName();
+//        String analysisResult =
+        String analysisResult = "분석결과 temp";
+
+
+        // chatAnalysis, chatMessage 저장 및 연관관계
+        ChatAnalysis chatAnalysis = ChatAnalysis.builder()
+                .analysis(analysisResult)
+                .build();
+
+
+        chatAnalysisRepository.save(chatAnalysis);
+
+        // 채팅 메세지 저장
+        ChatMessage message = ChatMessage.builder()
+                .message(request.getMessage())
+//                .chatAnalyses(chatAnalysis)
+                .chatRoom(chatRoom)
+                .build();
+
+        chatMessageRepository.save(message);
+
+
+        return analysisResult;
+    }
 }

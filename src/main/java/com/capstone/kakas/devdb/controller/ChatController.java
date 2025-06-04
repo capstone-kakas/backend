@@ -26,6 +26,7 @@ public class ChatController {
         return ApiResponse.onSuccess(response);
     }
 
+    //채팅방 상품 설정 controller
     @PutMapping
     public ApiResponse<ChatRoomResponseDto.ChatRoomAssignProductDto> assignProduct(
             @RequestBody ChatRoomRequestDto.ChatRoomAssignProductDto request
@@ -33,6 +34,15 @@ public class ChatController {
 
         ChatRoomResponseDto.ChatRoomAssignProductDto response = chatRoomService.assignProductToChatRoom(request);
 
+        return ApiResponse.onSuccess(response);
+    }
+
+    //채팅방 메세지 분석 controller
+    @PostMapping("/message")
+    public ApiResponse<String> messageAnalysis(
+            @RequestBody ChatRoomRequestDto.messageAnalysisDto request
+    ){
+        String response = chatRoomService.messageAnalysis(request);
         return ApiResponse.onSuccess(response);
     }
 }

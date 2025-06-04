@@ -25,4 +25,13 @@ public class ChatRoomResponseDto {
         private Long productId;
         private String productName;
     }
+
+//    @Getter
+//    @Setter
+//    @NoArgsConstructor
+//    @AllArgsConstructor
+//    @Builder
+//    public static class messageAnalysisResultDto{
+//        private String messageAnalysis;
+//    }
 }

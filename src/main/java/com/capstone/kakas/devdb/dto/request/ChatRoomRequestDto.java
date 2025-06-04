@@ -24,4 +24,17 @@ public class ChatRoomRequestDto {
         private Long chatRoomId;
         private String productName;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class messageAnalysisDto{
+        private Long chatRoomId;
+        private String chatRoomTitle;
+        private String message;
+    }
+
+    
 }
