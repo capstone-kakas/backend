@@ -1,12 +1,13 @@
-package com.capstone.kakas.crawlingdb.repository;
+package com.capstone.kakas.devdb.repository;
 
-import com.capstone.kakas.crawlingdb.domain.Product;
+import com.capstone.kakas.devdb.domain.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface DEVProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByName(String name);
+
 }
