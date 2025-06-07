@@ -33,9 +33,14 @@ RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor
     apt-get install -y google-chrome-stable && \
     ln -sf /usr/bin/google-chrome-stable /usr/bin/google-chrome
 
-# JAR 복사
+# JAR 및 설정 파일 복사
 ARG JAR_FILE=build/libs/*.jar
 COPY ${JAR_FILE} app.jar
+COPY .env /app/.env
+COPY src/main/resources/keystore.p12 /app/keystore.p12
+
+# 작업 디렉토리 설정
+WORKDIR /app
 
 # Spring Profile 설정
 ENV SPRING_PROFILES_ACTIVE=prod
