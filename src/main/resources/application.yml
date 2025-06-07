@@ -1,3 +1,13 @@
+server:
+  port: 443
+  ssl:
+    key-store: classpath:keystore.p12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD}
+    key-store-type: PKCS12
+    key-alias: springboot
+  # HTTP를 HTTPS로 리다이렉트
+  forward-headers-strategy: native
+
 spring:
   config:
     import: optional:file:.env[.properties]
