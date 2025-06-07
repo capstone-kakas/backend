@@ -1,5 +1,6 @@
 package com.capstone.kakas.devdb.domain;
 
+import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,13 +23,16 @@ public class ChatRoom extends BaseEntity {
 
     private String content;
 
-    private String seller;
+    private Long seller;
 
     private String price;
 
     private String deliveryFee;
 
-    private String category;
+    private String status;
+
+    @Enumerated(EnumType.STRING)
+    private ProductCategory category;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_message_id", nullable = false)
@@ -40,7 +44,7 @@ public class ChatRoom extends BaseEntity {
     private Member member;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id")
     private Product product;
 
     // 연관관계 편의 메서드
