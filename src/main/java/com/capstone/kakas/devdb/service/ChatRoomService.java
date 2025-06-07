@@ -97,12 +97,14 @@ public class ChatRoomService {
 
         // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
 //        ChatRoomRequestDto.aiRequestDto aiRequestDto = ChatRoomRequestDto.aiRequestDto.builder()
+//                .productName(chatRoom.getProduct().getName())
 //                .title(chatRoom.getTitle())
 //                .content(chatRoom.getContent())
-//                .productName(chatRoom.getProduct().getName())
+//                .price(chatRoom.getPrice())
+//                .deliveryFee(chatRoom.getDeliveryFee())
 //                .message(request.getMessage())
 //                .build();
-//        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
+////        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
 //        String analysisResult =
 
         String analysisResult = "분석결과 temp";
