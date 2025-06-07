@@ -1,5 +1,6 @@
 package com.capstone.kakas.devdb.domain;
 
+import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,5 +20,6 @@ public class Product extends BaseEntity {
     private String name;
 
     @Column
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private ProductCategory category;
 }
