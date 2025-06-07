@@ -9,7 +9,7 @@ public class ChatRoomRequestDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class createChatRoomDto {
-//        private Long memberId;
+        private Long memberId;
         private String chatRoomTitle;
         private String content;
         private String category;

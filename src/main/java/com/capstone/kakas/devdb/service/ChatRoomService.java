@@ -2,16 +2,10 @@ package com.capstone.kakas.devdb.service;
 
 import com.capstone.kakas.apiPayload.code.status.ErrorStatus;
 import com.capstone.kakas.apiPayload.exception.handler.TempHandler;
-import com.capstone.kakas.devdb.domain.ChatAnalysis;
-import com.capstone.kakas.devdb.domain.ChatMessage;
-import com.capstone.kakas.devdb.domain.ChatRoom;
-import com.capstone.kakas.devdb.domain.Product;
+import com.capstone.kakas.devdb.domain.*;
 import com.capstone.kakas.devdb.dto.request.ChatRoomRequestDto;
 import com.capstone.kakas.devdb.dto.response.ChatRoomResponseDto;
-import com.capstone.kakas.devdb.repository.ChatAnalysisRepository;
-import com.capstone.kakas.devdb.repository.ChatMessageRepository;
-import com.capstone.kakas.devdb.repository.ChatRoomRepository;
-import com.capstone.kakas.devdb.repository.DEVProductRepository;
+import com.capstone.kakas.devdb.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,11 +19,14 @@ import java.util.List;
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final DEVProductRepository productRepository;
+    private final MemberRepository memberRepository;
     private final ChatAnalysisRepository chatAnalysisRepository;
     private final ChatMessageRepository chatMessageRepository;
 
     @Transactional
     public ChatRoomResponseDto.addChatRoomDto addChatRoom(ChatRoomRequestDto.createChatRoomDto request) {
+        Member newMember = memberRepository.findById(request.getMemberId())
+                .orElseThrow(() -> new TempHandler(ErrorStatus.MEMBER_NOT_FOUND));
 
 //        // 요청된 제목을 기반으로, 유사도가 높은 상품 이름 상위 5개를 가져온다
 //        List<String> suggestedProductNames = filteringProductName(request.getChatRoomTitle());
@@ -39,6 +36,7 @@ public class ChatRoomService {
         );
 
         ChatRoom chatRoom = ChatRoom.builder()
+                .member(newMember)
                 .title(request.getChatRoomTitle())
                 .content(request.getContent())
                 .category(request.getCategory())
