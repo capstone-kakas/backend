@@ -29,6 +29,4 @@ public class Product {
     @Column(nullable = false, length = 50)
     private String category;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Variant> variants;
 }

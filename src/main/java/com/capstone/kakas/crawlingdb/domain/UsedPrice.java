@@ -20,13 +20,6 @@ public class UsedPrice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "model_code_id", nullable = false)
-    private ModelCode modelCode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "site_id", nullable = false)
-    private Site site;
 
     @Column(length = 100)
     private String sellerId;

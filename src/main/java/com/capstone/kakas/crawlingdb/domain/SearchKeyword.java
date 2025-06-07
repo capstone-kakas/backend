@@ -20,10 +20,6 @@ public class SearchKeyword {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "model_code_id", nullable = false)
-    private ModelCode modelCode;
-
     @Column(nullable = false, length = 50)
     private String keyword;
 }

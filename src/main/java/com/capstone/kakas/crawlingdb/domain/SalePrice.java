@@ -21,13 +21,6 @@ public class SalePrice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "model_code_id", nullable = false)
-    private ModelCode modelCode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "site_id", nullable = false)
-    private Site site;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
