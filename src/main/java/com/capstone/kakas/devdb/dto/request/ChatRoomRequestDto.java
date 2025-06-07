@@ -12,6 +12,8 @@ public class ChatRoomRequestDto {
 //        private Long memberId;
         private String chatRoomTitle;
         private String content;
+        private String category;
+        private String deliveryFee;
         private String seller;
         private Integer price;
     }
@@ -45,6 +47,8 @@ public class ChatRoomRequestDto {
         private String productName;
         private String title;
         private String content;
+        private String price;
+        private String deliveryFee;
         private String message;
     }
 }
