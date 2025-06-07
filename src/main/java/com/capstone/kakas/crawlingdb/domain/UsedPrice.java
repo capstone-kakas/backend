@@ -1,5 +1,6 @@
 package com.capstone.kakas.crawlingdb.domain;
 
+import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -8,11 +9,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "used_price")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsedPrice {
+public class UsedPrice extends BaseEntity {
     /**
      * 중고상품 가격 저장 엔티티
      */
@@ -20,20 +21,12 @@ public class UsedPrice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-    @Column(length = 100)
-    private String sellerId;
-
-    @Column(length = 50)
-    private String condition;
-
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false, length = 10)
-    private String currency;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    @Column(nullable = false)
-    private LocalDateTime crawledAt;
 }
 

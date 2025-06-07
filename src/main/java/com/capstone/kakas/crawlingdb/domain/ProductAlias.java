@@ -1,13 +1,10 @@
 package com.capstone.kakas.crawlingdb.domain;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "product_alias")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,7 +23,5 @@ public class ProductAlias {
     @Column(nullable = false, length = 100)
     private String alias;
 
-    @Column(nullable = false, length = 20)
-    private String type;  // SHORT, LOCALE, BRAND 등
 }
 

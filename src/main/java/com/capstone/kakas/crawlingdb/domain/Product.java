@@ -1,16 +1,14 @@
 package com.capstone.kakas.crawlingdb.domain;
 
+import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
 @Table(name = "product")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,7 +24,10 @@ public class Product {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 50)
-    private String category;
+    @Column(length = 100)
+    private String saleUrl;
+
+    @Column(length = 109)
+    private String bunjangUrl;
 
 }

@@ -5,7 +5,6 @@ import lombok.*;
 
 @Entity
 @Table(name = "exclude_keyword")
-@Data
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,4 +20,8 @@ public class ExcludeKeyword {
 
     @Column(nullable = false, length = 50)
     private String keyword;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 }
