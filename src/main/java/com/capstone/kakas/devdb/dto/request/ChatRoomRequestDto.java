@@ -1,5 +1,6 @@
 package com.capstone.kakas.devdb.dto.request;
 
+import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import lombok.*;
 
 public class ChatRoomRequestDto {
@@ -9,13 +10,14 @@ public class ChatRoomRequestDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class createChatRoomDto {
-//        private Long memberId;
+        private Long memberId;
         private String chatRoomTitle;
         private String content;
-        private String category;
+        private Integer category;
         private String deliveryFee;
-        private String seller;
-        private Integer price;
+        private Long seller;
+        private String price;
+        private String status;
     }
 
     @Getter
