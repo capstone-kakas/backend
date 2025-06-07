@@ -16,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,18 +33,25 @@ public class ChatRoomService {
 
 //        // 요청된 제목을 기반으로, 유사도가 높은 상품 이름 상위 5개를 가져온다
 //        List<String> suggestedProductNames = filteringProductName(request.getChatRoomTitle());
+        //임시 suggestedProductNames
+        List<String> suggestedProductNames = new ArrayList<>(
+                List.of("플스5 슬림 디지털", "플스5 프로", "플스5 디스크")
+        );
 
         ChatRoom chatRoom = ChatRoom.builder()
                 .title(request.getChatRoomTitle())
                 .content(request.getContent())
+                .category(request.getCategory())
+                .deliveryFee(request.getDeliveryFee())
                 .seller(request.getSeller())
+                .price(String.valueOf(request.getPrice()))
                 .build();
 
         ChatRoom saved = chatRoomRepository.save(chatRoom);
 
         return ChatRoomResponseDto.addChatRoomDto.builder()
                 .chatRoomId(saved.getId())
-//                .suggestedProductNames(suggestedProductNames)
+                .suggestedProductNames(suggestedProductNames)
                 .build();
 
     }
