@@ -1,6 +1,5 @@
 package com.capstone.kakas.crawlingdb.domain;
 
-import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,7 +26,7 @@ public class Product {
     @Column(length = 100)
     private String saleUrl;
 
-    @Column(length = 109)
+    @Column(name = "bunjang_url", length = 255)
     private String bunjangUrl;
 
 }

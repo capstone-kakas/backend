@@ -21,8 +21,8 @@ public class UsedPrice extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
+    @Column(nullable = false)
+    private int price;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

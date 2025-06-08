@@ -1,8 +1,8 @@
 package com.capstone.kakas.crawlingdb.service;
 
 import com.capstone.kakas.crawlingdb.domain.Product;
-import com.capstone.kakas.crawlingdb.dto.BunjangItemDto;
-import com.capstone.kakas.crawlingdb.dto.CrawlingResultDto;
+import com.capstone.kakas.crawlingdb.domain.UsedPrice;
+import com.capstone.kakas.crawlingdb.dto.*;
 import com.capstone.kakas.crawlingdb.dto.request.ProductCrawlingDto;
 import com.capstone.kakas.crawlingdb.repository.ProductRepository;
 import com.capstone.kakas.crawlingdb.repository.UsedPriceRepository;
@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -66,6 +68,16 @@ public class BunjangCrawlingService {
                 // 실제 크롤링 수행
                 List<BunjangItemDto> items = crawlBunjangUrl(target.getBunjangUrl());
 
+
+                // 크롤링 결과 로그
+                log.info("크롤링 완료 - 상품: {}, 수집된 항목 수: {}", target.getProductName(), items.size());
+
+                // 크롤링된 항목들의 샘플 로그 (처음 3개만)
+                for (int i = 0; i < Math.min(3, items.size()); i++) {
+                    BunjangItemDto item = items.get(i);
+                    log.debug("크롤링 샘플 [{}] - 제목: {}, 가격: {}", i+1, item.getTitle(), item.getPrice());
+                }
+
                 CrawlingResultDto result = CrawlingResultDto.builder()
                         .productId(target.getProductId())
                         .productName(target.getProductName())
@@ -92,6 +104,196 @@ public class BunjangCrawlingService {
 
 
 
+
+    /**
+     * 3단계: 판매제목 필터링 - 상품에 부합하지 않는 항목 제거
+     * @param crawlingResults 크롤링된 원시 데이터
+     * @return 필터링된 데이터 리스트
+     */
+    public List<FilteredResultDto> filteringProductTitle(List<CrawlingResultDto> crawlingResults) {
+        log.info("상품 제목 필터링 시작");
+
+        List<FilteredResultDto> filteredResults = new ArrayList<>();
+
+        for (CrawlingResultDto crawlingResult : crawlingResults) {
+            try {
+                log.debug("필터링 시작 - 상품: {}, 크롤링된 항목 수: {}",
+                        crawlingResult.getProductName(), crawlingResult.getItems().size());
+
+                // 크롤링된 항목들 로그 출력 (디버깅용)
+                for (BunjangItemDto item : crawlingResult.getItems()) {
+                    log.debug("크롤링된 항목 - 제목: {}, 가격: {}", item.getTitle(), item.getPrice());
+                }
+
+                // 필터링 키워드 설정 (상품별로 다르게 설정 가능)
+                FilterKeywords filterKeywords = getFilterKeywords(crawlingResult.getProductName());
+
+                log.debug("필터링 키워드 - 검색: {}, 제외: {}",
+                        filterKeywords.getSearchKeywords(), filterKeywords.getExcludeKeywords());
+
+                // 필터링 수행
+                List<BunjangItemDto> filteredItems = new ArrayList<>();
+                for (BunjangItemDto item : crawlingResult.getItems()) {
+                    boolean isValid = isValidItem(item, filterKeywords);
+                    log.debug("필터링 검사 - 제목: {}, 유효: {}", item.getTitle(), isValid);
+                    if (isValid) {
+                        filteredItems.add(item);
+                    }
+                }
+
+                FilteredResultDto filteredResult = FilteredResultDto.builder()
+                        .productId(crawlingResult.getProductId())
+                        .productName(crawlingResult.getProductName())
+                        .originalItemCount(crawlingResult.getItems().size())
+                        .filteredItemCount(filteredItems.size())
+                        .filteredItems(filteredItems)
+                        .filteredAt(LocalDateTime.now())
+                        .build();
+
+                filteredResults.add(filteredResult);
+
+                log.debug("필터링 완료 - 상품: {}, 원본: {}개 -> 필터링 후: {}개",
+                        crawlingResult.getProductName(),
+                        crawlingResult.getItems().size(),
+                        filteredItems.size());
+
+            } catch (Exception e) {
+                log.error("필터링 실패 - 상품: {}, 오류: {}", crawlingResult.getProductName(), e.getMessage(), e);
+            }
+        }
+
+        log.info("필터링 완료 - 처리된 상품 수: {}", filteredResults.size());
+        return filteredResults;
+    }
+
+    /**
+     * 4단계: 중고가격 계산 및 저장
+     * @param filteredResults 필터링된 데이터
+     * @return 처리 결과
+     */
+    public List<UsedPriceResultDto> calculateUsedPrice(List<FilteredResultDto> filteredResults) {
+        log.info("중고가격 계산 및 저장 시작");
+
+        List<UsedPriceResultDto> priceResults = new ArrayList<>();
+
+        for (FilteredResultDto filteredResult : filteredResults) {
+            try {
+                if (filteredResult.getFilteredItems().isEmpty()) {
+                    log.warn("필터링된 항목이 없어 가격 계산 불가 - 상품: {}", filteredResult.getProductName());
+                    continue;
+                }
+
+                // 평균 가격 계산
+                List<Integer> prices = filteredResult.getFilteredItems().stream()
+                        .map(BunjangItemDto::getPrice)
+                        .filter(price -> price > 0) // 0원 제외
+                        .collect(Collectors.toList());
+
+                if (prices.isEmpty()) {
+                    log.warn("유효한 가격 정보가 없음 - 상품: {}", filteredResult.getProductName());
+                    continue;
+                }
+
+                double averagePrice = prices.stream()
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .orElse(0.0);
+
+                int finalAveragePrice = (int) Math.round(averagePrice);
+
+                // Product 조회
+                Product product = productRepository.findById(filteredResult.getProductId())
+                        .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. ID: " + filteredResult.getProductId()));
+
+                // UsedPrice 엔티티 생성 및 저장
+                UsedPrice usedPrice = UsedPrice.builder()
+                        .product(product)
+                        .price(finalAveragePrice)
+//                        .sampleCount(prices.size())
+                        .build();
+
+                usedPriceRepository.save(usedPrice);
+
+                UsedPriceResultDto priceResult = UsedPriceResultDto.builder()
+                        .productId(filteredResult.getProductId())
+                        .productName(filteredResult.getProductName())
+                        .averagePrice(finalAveragePrice)
+                        .sampleCount(prices.size())
+                        .minPrice(Collections.min(prices))
+                        .maxPrice(Collections.max(prices))
+                        .calculatedAt(LocalDateTime.now())
+                        .build();
+
+                priceResults.add(priceResult);
+
+                log.debug("가격 계산 완료 - 상품: {}, 평균가격: {}원, 샘플수: {}개",
+                        filteredResult.getProductName(), finalAveragePrice, prices.size());
+
+            } catch (Exception e) {
+                log.error("가격 계산 실패 - 상품: {}, 오류: {}", filteredResult.getProductName(), e.getMessage(), e);
+            }
+        }
+
+        log.info("중고가격 계산 완료 - 처리된 상품 수: {}", priceResults.size());
+        return priceResults;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * 아이템이 필터링 조건에 맞는지 검사
+     */
+    private boolean isValidItem(BunjangItemDto item, FilterKeywords filterKeywords) {
+        String title = item.getTitle().toLowerCase();
+
+        // 검색 키워드 중 하나라도 포함되어야 함
+//        boolean hasSearchKeyword = filterKeywords.getSearchKeywords().isEmpty() ||
+//                filterKeywords.getSearchKeywords().stream()
+//                        .anyMatch(keyword -> title.contains(keyword.toLowerCase()));
+
+        boolean hasSearchKeyword = true;
+
+
+        // 제외 키워드가 포함되면 안됨
+        boolean hasExcludeKeyword = filterKeywords.getExcludeKeywords().stream()
+                .anyMatch(keyword -> title.contains(keyword.toLowerCase()));
+
+//        return hasSearchKeyword && !hasExcludeKeyword;
+        return true;
+    }
+
+
+
+
+
+    /**
+     * 상품별 필터링 키워드 설정
+     */
+    private FilterKeywords getFilterKeywords(String productName) {
+        // 상품명에 따른 필터링 키워드 설정
+        // 실제로는 DB나 설정 파일에서 관리할 수 있음
+
+        List<String> searchKeywords = new ArrayList<>();
+        List<String> excludeKeywords = new ArrayList<>();
+
+        if (productName.toLowerCase().contains("플스5") || productName.toLowerCase().contains("ps5")) {
+            searchKeywords.addAll(Arrays.asList("플스5", "ps5", "플레이스테이션5"));
+            excludeKeywords.addAll(Arrays.asList("헤드셋", "컨트롤러", "게임", "액세서리", "케이스"));
+        }
+        // 다른 상품에 대한 키워드도 추가 가능
+
+        return FilterKeywords.builder()
+                .searchKeywords(searchKeywords)
+                .excludeKeywords(excludeKeywords)
+                .build();
+    }
 
 
 
