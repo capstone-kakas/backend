@@ -29,4 +29,10 @@ public class Product {
     @Column(name = "bunjang_url", length = 255)
     private String bunjangUrl;
 
+    @Column(name = "title_selector", columnDefinition = "TEXT")
+    private String titleSelector;
+
+    @Column(name = "price_selector", columnDefinition = "TEXT")
+    private String priceSelector;
+
 }

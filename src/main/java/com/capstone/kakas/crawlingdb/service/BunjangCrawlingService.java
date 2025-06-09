@@ -1,11 +1,11 @@
 package com.capstone.kakas.crawlingdb.service;
 
 import com.capstone.kakas.crawlingdb.domain.Product;
-import com.capstone.kakas.crawlingdb.domain.UsedPrice;
 import com.capstone.kakas.crawlingdb.dto.*;
 import com.capstone.kakas.crawlingdb.dto.request.ProductCrawlingDto;
 import com.capstone.kakas.crawlingdb.repository.ProductRepository;
 import com.capstone.kakas.crawlingdb.repository.UsedPriceRepository;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -13,15 +13,15 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.openqa.selenium.NoSuchElementException;
+import java.time.Duration;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,421 +51,168 @@ public class BunjangCrawlingService {
         return mappingList;
     }
 
-    /**
-     * 2단계: 실제 크롤링 실행 - 각 URL에서 판매제목과 가격 추출
-     * @param crawlingTargets 크롤링 대상 상품 리스트
-     * @return 크롤링된 원시 데이터 리스트
-     */
+
+
     public List<CrawlingResultDto> executeCrawling(List<ProductCrawlingDto> crawlingTargets) {
-        log.info("크롤링 실행 시작 - 대상 상품 수: {}", crawlingTargets.size());
+        List<CrawlingResultDto> results = new ArrayList<>();
 
-        List<CrawlingResultDto> crawlingResults = new ArrayList<>();
-
-        for (ProductCrawlingDto target : crawlingTargets) {
-            try {
-                log.debug("크롤링 시작 - 상품: {}, URL: {}", target.getProductName(), target.getBunjangUrl());
-
-                // 실제 크롤링 수행
-                List<BunjangItemDto> items = crawlBunjangUrl(target.getBunjangUrl());
-
-
-                // 크롤링 결과 로그
-                log.info("크롤링 완료 - 상품: {}, 수집된 항목 수: {}", target.getProductName(), items.size());
-
-                // 크롤링된 항목들의 샘플 로그 (처음 3개만)
-                for (int i = 0; i < Math.min(3, items.size()); i++) {
-                    BunjangItemDto item = items.get(i);
-                    log.debug("크롤링 샘플 [{}] - 제목: {}, 가격: {}", i+1, item.getTitle(), item.getPrice());
-                }
-
-                CrawlingResultDto result = CrawlingResultDto.builder()
-                        .productId(target.getProductId())
-                        .productName(target.getProductName())
-                        .bunjangUrl(target.getBunjangUrl())
-                        .items(items)
-                        .crawledAt(LocalDateTime.now())
-                        .build();
-
-                crawlingResults.add(result);
-                log.debug("크롤링 완료 - 상품: {}, 수집된 항목 수: {}", target.getProductName(), items.size());
-
-                // 크롤링 간격 조절 (서버 부하 방지)
-                Thread.sleep(1000);
-
-            } catch (Exception e) {
-                log.error("크롤링 실패 - 상품: {}, 오류: {}", target.getProductName(), e.getMessage(), e);
-            }
-        }
-
-        log.info("크롤링 완료 - 처리된 상품 수: {}", crawlingResults.size());
-        return crawlingResults;
-    }
-
-
-
-
-
-    /**
-     * 3단계: 판매제목 필터링 - 상품에 부합하지 않는 항목 제거
-     * @param crawlingResults 크롤링된 원시 데이터
-     * @return 필터링된 데이터 리스트
-     */
-    public List<FilteredResultDto> filteringProductTitle(List<CrawlingResultDto> crawlingResults) {
-        log.info("상품 제목 필터링 시작");
-
-        List<FilteredResultDto> filteredResults = new ArrayList<>();
-
-        for (CrawlingResultDto crawlingResult : crawlingResults) {
-            try {
-                log.debug("필터링 시작 - 상품: {}, 크롤링된 항목 수: {}",
-                        crawlingResult.getProductName(), crawlingResult.getItems().size());
-
-                // 크롤링된 항목들 로그 출력 (디버깅용)
-                for (BunjangItemDto item : crawlingResult.getItems()) {
-                    log.debug("크롤링된 항목 - 제목: {}, 가격: {}", item.getTitle(), item.getPrice());
-                }
-
-                // 필터링 키워드 설정 (상품별로 다르게 설정 가능)
-                FilterKeywords filterKeywords = getFilterKeywords(crawlingResult.getProductName());
-
-                log.debug("필터링 키워드 - 검색: {}, 제외: {}",
-                        filterKeywords.getSearchKeywords(), filterKeywords.getExcludeKeywords());
-
-                // 필터링 수행
-                List<BunjangItemDto> filteredItems = new ArrayList<>();
-                for (BunjangItemDto item : crawlingResult.getItems()) {
-                    boolean isValid = isValidItem(item, filterKeywords);
-                    log.debug("필터링 검사 - 제목: {}, 유효: {}", item.getTitle(), isValid);
-                    if (isValid) {
-                        filteredItems.add(item);
-                    }
-                }
-
-                FilteredResultDto filteredResult = FilteredResultDto.builder()
-                        .productId(crawlingResult.getProductId())
-                        .productName(crawlingResult.getProductName())
-                        .originalItemCount(crawlingResult.getItems().size())
-                        .filteredItemCount(filteredItems.size())
-                        .filteredItems(filteredItems)
-                        .filteredAt(LocalDateTime.now())
-                        .build();
-
-                filteredResults.add(filteredResult);
-
-                log.debug("필터링 완료 - 상품: {}, 원본: {}개 -> 필터링 후: {}개",
-                        crawlingResult.getProductName(),
-                        crawlingResult.getItems().size(),
-                        filteredItems.size());
-
-            } catch (Exception e) {
-                log.error("필터링 실패 - 상품: {}, 오류: {}", crawlingResult.getProductName(), e.getMessage(), e);
-            }
-        }
-
-        log.info("필터링 완료 - 처리된 상품 수: {}", filteredResults.size());
-        return filteredResults;
-    }
-
-    /**
-     * 4단계: 중고가격 계산 및 저장
-     * @param filteredResults 필터링된 데이터
-     * @return 처리 결과
-     */
-    public List<UsedPriceResultDto> calculateUsedPrice(List<FilteredResultDto> filteredResults) {
-        log.info("중고가격 계산 및 저장 시작");
-
-        List<UsedPriceResultDto> priceResults = new ArrayList<>();
-
-        for (FilteredResultDto filteredResult : filteredResults) {
-            try {
-                if (filteredResult.getFilteredItems().isEmpty()) {
-                    log.warn("필터링된 항목이 없어 가격 계산 불가 - 상품: {}", filteredResult.getProductName());
-                    continue;
-                }
-
-                // 평균 가격 계산
-                List<Integer> prices = filteredResult.getFilteredItems().stream()
-                        .map(BunjangItemDto::getPrice)
-                        .filter(price -> price > 0) // 0원 제외
-                        .collect(Collectors.toList());
-
-                if (prices.isEmpty()) {
-                    log.warn("유효한 가격 정보가 없음 - 상품: {}", filteredResult.getProductName());
-                    continue;
-                }
-
-                double averagePrice = prices.stream()
-                        .mapToInt(Integer::intValue)
-                        .average()
-                        .orElse(0.0);
-
-                int finalAveragePrice = (int) Math.round(averagePrice);
-
-                // Product 조회
-                Product product = productRepository.findById(filteredResult.getProductId())
-                        .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다. ID: " + filteredResult.getProductId()));
-
-                // UsedPrice 엔티티 생성 및 저장
-                UsedPrice usedPrice = UsedPrice.builder()
-                        .product(product)
-                        .price(finalAveragePrice)
-//                        .sampleCount(prices.size())
-                        .build();
-
-                usedPriceRepository.save(usedPrice);
-
-                UsedPriceResultDto priceResult = UsedPriceResultDto.builder()
-                        .productId(filteredResult.getProductId())
-                        .productName(filteredResult.getProductName())
-                        .averagePrice(finalAveragePrice)
-                        .sampleCount(prices.size())
-                        .minPrice(Collections.min(prices))
-                        .maxPrice(Collections.max(prices))
-                        .calculatedAt(LocalDateTime.now())
-                        .build();
-
-                priceResults.add(priceResult);
-
-                log.debug("가격 계산 완료 - 상품: {}, 평균가격: {}원, 샘플수: {}개",
-                        filteredResult.getProductName(), finalAveragePrice, prices.size());
-
-            } catch (Exception e) {
-                log.error("가격 계산 실패 - 상품: {}, 오류: {}", filteredResult.getProductName(), e.getMessage(), e);
-            }
-        }
-
-        log.info("중고가격 계산 완료 - 처리된 상품 수: {}", priceResults.size());
-        return priceResults;
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * 아이템이 필터링 조건에 맞는지 검사
-     */
-    private boolean isValidItem(BunjangItemDto item, FilterKeywords filterKeywords) {
-        String title = item.getTitle().toLowerCase();
-
-        // 검색 키워드 중 하나라도 포함되어야 함
-//        boolean hasSearchKeyword = filterKeywords.getSearchKeywords().isEmpty() ||
-//                filterKeywords.getSearchKeywords().stream()
-//                        .anyMatch(keyword -> title.contains(keyword.toLowerCase()));
-
-        boolean hasSearchKeyword = true;
-
-
-        // 제외 키워드가 포함되면 안됨
-        boolean hasExcludeKeyword = filterKeywords.getExcludeKeywords().stream()
-                .anyMatch(keyword -> title.contains(keyword.toLowerCase()));
-
-//        return hasSearchKeyword && !hasExcludeKeyword;
-        return true;
-    }
-
-
-
-
-
-    /**
-     * 상품별 필터링 키워드 설정
-     */
-    private FilterKeywords getFilterKeywords(String productName) {
-        // 상품명에 따른 필터링 키워드 설정
-        // 실제로는 DB나 설정 파일에서 관리할 수 있음
-
-        List<String> searchKeywords = new ArrayList<>();
-        List<String> excludeKeywords = new ArrayList<>();
-
-        if (productName.toLowerCase().contains("플스5") || productName.toLowerCase().contains("ps5")) {
-            searchKeywords.addAll(Arrays.asList("플스5", "ps5", "플레이스테이션5"));
-            excludeKeywords.addAll(Arrays.asList("헤드셋", "컨트롤러", "게임", "액세서리", "케이스"));
-        }
-        // 다른 상품에 대한 키워드도 추가 가능
-
-        return FilterKeywords.builder()
-                .searchKeywords(searchKeywords)
-                .excludeKeywords(excludeKeywords)
-                .build();
-    }
-
-
-
-    /**
-     * 실제 번개장터 크롤링 수행
-     */
-    private List<BunjangItemDto> crawlBunjangUrl(String bunjangUrl) {
-        List<BunjangItemDto> items = new ArrayList<>();
         WebDriver driver = null;
-
         try {
-            // WebDriver 설정
+            // WebDriverManager를 사용한 Chrome 드라이버 설정
+            WebDriverManager.chromedriver()
+                    .setup();
+
             ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless"); // 백그라운드 실행
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+            options.addArguments(
+                    "--headless=new",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--window-size=1920,1080",
+                    "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+            );
 
             driver = new ChromeDriver(options);
-            driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-            driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
-            log.debug("번개장터 페이지 로딩 시작: {}", bunjangUrl);
-            driver.get(bunjangUrl);
-
-            // 페이지 로딩 대기
-            Thread.sleep(3000);
-
-            // 무한 스크롤을 위한 스크롤 다운 (번개장터는 무한스크롤 방식)
-//            scrollToLoadMoreItems(driver);
-
-            // 상품 아이템들 찾기
-            List<WebElement> productElements = driver.findElements(By.cssSelector("div[data-testid='product-item']"));
-
-            if (productElements.isEmpty()) {
-                // 다른 셀렉터 시도
-                productElements = driver.findElements(By.cssSelector(".sc-dlfnbm"));
-                if (productElements.isEmpty()) {
-                    productElements = driver.findElements(By.cssSelector("[class*='ProductItem']"));
-                }
-            }
-
-            log.debug("찾은 상품 수: {}", productElements.size());
-
-            for (WebElement element : productElements) {
+            for (ProductCrawlingDto target : crawlingTargets) {
                 try {
-                    BunjangItemDto item = extractItemInfo(element, driver);
-                    if (item != null && item.getPrice() != null && item.getPrice() > 0) {
-                        items.add(item);
+                    // 해당 URL로 이동
+                    driver.get(target.getUrl());
+
+                    // 페이지 로딩 대기
+                    Thread.sleep(2000);
+
+                    // Selector 유효성 검사
+                    if (target.getTitleSelector() == null || target.getPriceSelector() == null) {
+                        log.warn("Selector가 null입니다 - ProductId: {}", target.getProductId());
+                        continue;
                     }
+
+                    // 상품 목록의 공통 부모 요소 찾기 (selector에서 공통 부분 추출)
+                    String parentSelector = extractParentSelector(target.getTitleSelector());
+                    List<WebElement> productElements = driver.findElements(By.cssSelector(parentSelector));
+
+                    for (WebElement productElement : productElements) {
+                        try {
+                            // 동적 selector를 사용하여 제목 추출
+                            String relativeTitleSelector = extractRelativeSelector(target.getTitleSelector());
+                            WebElement titleElement = productElement.findElement(By.cssSelector(relativeTitleSelector));
+                            String title = titleElement.getText().trim();
+
+                            // 동적 selector를 사용하여 가격 추출
+                            String relativePriceSelector = extractRelativeSelector(target.getPriceSelector());
+                            WebElement priceElement = productElement.findElement(By.cssSelector(relativePriceSelector));
+                            String price = priceElement.getText().trim();
+
+                            // 빈 값 체크
+                            if (!title.isEmpty() && !price.isEmpty()) {
+                                CrawlingResultDto result = new CrawlingResultDto();
+                                result.setProductId(target.getProductId());
+                                result.setProductName(target.getProductName());
+                                result.setSaleTitle(title);
+                                result.setPrice(price);
+                                result.setUrl(target.getUrl());
+
+                                results.add(result);
+                            }
+
+                        } catch (NoSuchElementException e) {
+                            // 개별 상품 요소를 찾지 못한 경우 건너뛰기
+                            continue;
+                        }
+                    }
+
                 } catch (Exception e) {
-                    log.warn("개별 상품 정보 추출 실패: {}", e.getMessage());
+                    // 해당 URL 처리 실패 시 로그 출력 후 다음으로 넘어가기
+                    log.error("크롤링 실패 - URL: {}, ProductId: {}, Error: {}",
+                            target.getUrl(), target.getProductId(), e.getMessage());
                 }
             }
-
-            log.debug("성공적으로 추출된 상품 수: {}", items.size());
 
         } catch (Exception e) {
-            log.error("번개장터 크롤링 실패: {}", e.getMessage(), e);
+            log.error("WebDriver 초기화 실패: {}", e.getMessage());
         } finally {
+            // WebDriver 리소스 정리
             if (driver != null) {
                 try {
                     driver.quit();
                 } catch (Exception e) {
-                    log.warn("WebDriver 종료 중 오류: {}", e.getMessage());
+                    log.error("WebDriver 종료 중 오류: {}", e.getMessage());
                 }
             }
         }
 
-        return items;
+        return results;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * 전체 selector에서 상품 목록의 공통 부모 selector 추출
+     * 예: "#root > div > div > div:nth-child(4) > div > div.sc-gbzWSY.dLcZgG > div > div:nth-child(3) > a > div.sc-kZmsYB.gshoXx > div.sc-RcBXQ.kWzERy"
+     * → "#root > div > div > div:nth-child(4) > div > div.sc-gbzWSY.dLcZgG > div > div"
+     */
+    private String extractParentSelector(String fullSelector) {
+        // 상품 리스트 컨테이너까지만 추출 (일반적으로 div > div 까지)
+        String[] parts = fullSelector.split(" > ");
+        StringBuilder parentSelector = new StringBuilder();
+
+        // 상품 목록 컨테이너 레벨까지만 포함 (경험적으로 조정 필요)
+        int endIndex = Math.min(parts.length - 4, parts.length); // 마지막 4개 요소 제외
+        for (int i = 0; i < endIndex; i++) {
+            if (i > 0) parentSelector.append(" > ");
+            parentSelector.append(parts[i]);
+        }
+
+        return parentSelector.toString();
     }
 
     /**
-     * 개별 상품 정보 추출
+     * 전체 selector에서 개별 상품 내의 상대 selector 추출
+     * 예: "#root > div > div > div:nth-child(4) > div > div.sc-gbzWSY.dLcZgG > div > div:nth-child(3) > a > div.sc-kZmsYB.gshoXx > div.sc-RcBXQ.kWzERy"
+     * → "a > div.sc-kZmsYB.gshoXx > div.sc-RcBXQ.kWzERy"
      */
-    private BunjangItemDto extractItemInfo(WebElement element, WebDriver driver) {
-        try {
-            String title = "";
-            Integer price = null;
-            String seller = "";
-            String location = "";
-            String itemUrl = "";
+    private String extractRelativeSelector(String fullSelector) {
+        String[] parts = fullSelector.split(" > ");
+        StringBuilder relativeSelector = new StringBuilder();
 
-            // 제목 추출
-            try {
-                WebElement titleElement = element.findElement(By.cssSelector("[class*='title'], [class*='name'], h3, .sc-jSMfEi"));
-                title = titleElement.getText().trim();
-            } catch (Exception e) {
-                // 다른 셀렉터 시도
-                try {
-                    WebElement titleElement = element.findElement(By.cssSelector("div:nth-child(2) > div:first-child"));
-                    title = titleElement.getText().trim();
-                } catch (Exception ex) {
-                    log.debug("제목 추출 실패");
-                }
-            }
-
-            // 가격 추출
-            try {
-                WebElement priceElement = element.findElement(By.cssSelector("[class*='price'], .sc-kgAjT, span[class*='Price']"));
-                String priceText = priceElement.getText().replaceAll("[^0-9]", "");
-                if (!priceText.isEmpty()) {
-                    price = Integer.parseInt(priceText);
-                }
-            } catch (Exception e) {
-                // 다른 방법으로 가격 추출 시도
-                try {
-                    List<WebElement> spanElements = element.findElements(By.tagName("span"));
-                    for (WebElement span : spanElements) {
-                        String text = span.getText();
-                        if (text.contains("원") && text.matches(".*\\d.*")) {
-                            String priceText = text.replaceAll("[^0-9]", "");
-                            if (!priceText.isEmpty()) {
-                                price = Integer.parseInt(priceText);
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    log.debug("가격 추출 실패");
-                }
-            }
-
-            // 판매자 정보 추출
-            try {
-                WebElement sellerElement = element.findElement(By.cssSelector("[class*='seller'], [class*='user'], .sc-kGXeez"));
-                seller = sellerElement.getText().trim();
-            } catch (Exception e) {
-                seller = "판매자 정보 없음";
-            }
-
-            // 지역 정보 추출
-            try {
-                WebElement locationElement = element.findElement(By.cssSelector("[class*='location'], [class*='area'], .sc-jKJlTe"));
-                location = locationElement.getText().trim();
-            } catch (Exception e) {
-                location = "지역 정보 없음";
-            }
-
-            // 상품 URL 추출
-            try {
-                WebElement linkElement = element.findElement(By.cssSelector("a"));
-                String href = linkElement.getAttribute("href");
-                if (href != null && href.startsWith("/")) {
-                    itemUrl = "https://m.bunjang.co.kr" + href;
-                } else if (href != null) {
-                    itemUrl = href;
-                }
-            } catch (Exception e) {
-                log.debug("URL 추출 실패");
-            }
-
-            // 유효한 데이터인지 확인
-            if (title.isEmpty() || price == null) {
-                return null;
-            }
-
-            return BunjangItemDto.builder()
-                    .title(title)
-                    .price(price)
-                    .seller(seller)
-                    .location(location)
-                    .itemUrl(itemUrl)
-                    .build();
-
-        } catch (Exception e) {
-            log.warn("상품 정보 추출 중 오류: {}", e.getMessage());
-            return null;
+        // 마지막 몇 개 요소만 상대 selector로 사용
+        int startIndex = Math.max(0, parts.length - 4); // 마지막 4개 요소 사용
+        for (int i = startIndex; i < parts.length; i++) {
+            if (i > startIndex) relativeSelector.append(" > ");
+            relativeSelector.append(parts[i]);
         }
+
+        return relativeSelector.toString();
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Product 엔티티를 DTO로 변환
@@ -474,7 +221,9 @@ public class BunjangCrawlingService {
         return ProductCrawlingDto.builder()
                 .productId(product.getId())
                 .productName(product.getName())
-                .bunjangUrl(product.getBunjangUrl())
+                .Url(product.getBunjangUrl())
+                .priceSelector(product.getPriceSelector())
+                .titleSelector(product.getTitleSelector())
                 .build();
     }
 

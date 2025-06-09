@@ -1,21 +1,20 @@
 package com.capstone.kakas.crawlingdb.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Builder
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class CrawlingResultDto {
     private Long productId;
     private String productName;
-    private String bunjangUrl;
-    private List<BunjangItemDto> items;
+    private String Url;
+    private String price;
+    private String SaleTitle;
     private LocalDateTime crawledAt;
 }

@@ -21,8 +21,12 @@ public class WebDriverConfig {
         options.addArguments(
                 "--headless=new",
                 "--no-sandbox",
-                "--disable-dev-shm-usage"
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--window-size=1920,1080",
+                "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
         );
+
         return new ChromeDriver(options);
     }
 }

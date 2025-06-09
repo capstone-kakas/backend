@@ -12,5 +12,7 @@ import lombok.NoArgsConstructor;
 public class ProductCrawlingDto {
     private Long productId;
     private String productName;
-    private String bunjangUrl;
+    private String Url;
+    private String titleSelector;
+    private String priceSelector;
 }
