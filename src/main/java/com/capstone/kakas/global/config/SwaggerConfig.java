@@ -18,8 +18,8 @@ public class SwaggerConfig {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("UMC Server WorkBook API")
-                        .description("UMC Server WorkBook API 명세서")
+                        .title("Kakas API")
+                        .description("kakas Server API 명세서")
                         .version("1.0.0")
                 )
                 .addServersItem(new Server().url("/"))
