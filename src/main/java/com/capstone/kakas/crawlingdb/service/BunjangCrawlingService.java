@@ -8,15 +8,13 @@ import com.capstone.kakas.crawlingdb.repository.UsedPriceRepository;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.openqa.selenium.NoSuchElementException;
+
 import java.time.Duration;
 
 import java.time.Duration;
@@ -199,12 +197,12 @@ public class BunjangCrawlingService {
                     }
 
                     // 제목 추출 시도
-                    String title = extractTitle(productElement);
-                    log.debug("추출된 제목 {}: '{}'", i, title);
+                    String title = extractTitle(productElement, driver);
+                    log.info("추출된 제목 {}: '{}'", i, title);
 
                     // 가격 추출 시도
-                    String price = extractPrice(productElement);
-                    log.debug("추출된 가격 {}: '{}'", i, price);
+                    String price = extractPrice(productElement, driver);
+                    log.info("추출된 가격 {}: '{}'", i, price);
 
                     // 유효한 데이터가 있을 때만 결과에 추가
                     if (isValidProductData(title, price)) {
@@ -232,8 +230,8 @@ public class BunjangCrawlingService {
                 try {
                     WebElement productElement = productElements.get(i);
 
-                    String title = extractTitle(productElement);
-                    String price = extractPrice(productElement);
+                    String title = extractTitle(productElement, driver);
+                    String price = extractPrice(productElement, driver);
 
                     if (isValidProductData(title, price)) {
                         CrawlingResultDto result = new CrawlingResultDto();
@@ -288,46 +286,71 @@ public class BunjangCrawlingService {
         return elements;
     }
 
+
+
+
+
+
+
+
     /**
-     * 상품 요소에서 제목 추출
+     * 상품 요소에서 제목 추출 (개선된 버전)
      */
-    private String extractTitle(WebElement productElement) {
-        // 번개장터 모바일 전용 selector들
+    private String extractTitle(WebElement productElement, WebDriver driver) {
+        // 1. 광고 요소 제외
+        try {
+            String elementText = productElement.getText();
+            if (elementText.contains("AD") || elementText.contains("광고")) {
+                log.debug("광고 요소 발견, 제목 추출 건너뜀");
+                return "";
+            }
+        } catch (Exception e) {
+            // 무시하고 계속 진행
+        }
+
+        // 2. 번개장터 모바일 전용 제목 selector들 (우선순위 순)
         String[] titleSelectors = {
-                "div[class*='sc-'][class*='title']",
-                "div[class*='sc-']:nth-child(1)",
-                "div[class*='sc-']:first-child",
-                "[class*='title']",
-                "[class*='name']",
-                "[class*='product']",
-                "div > div:first-child",
-                "div:first-child",
-                "p:first-child",
-                "span:first-child"
+                // 메인 제목 컨테이너
+                "div[class*='title']:not([class*='price']):not([class*='time'])",
+                "div[class*='name']:not([class*='price']):not([class*='time'])",
+                "div[class*='product']:not([class*='price']):not([class*='time'])",
+                // 구조적 접근
+                "div[class*='sc-'] > div:first-child:not([class*='price']):not([class*='time'])",
+                "div[class*='sc-']:first-child:not([class*='price']):not([class*='time'])",
+                // 일반적인 패턴
+                "h1, h2, h3, h4, h5, h6",
+                "p:first-child:not([class*='price']):not([class*='time'])",
+                "span:first-child:not([class*='price']):not([class*='time'])"
         };
 
+        // 각 selector로 제목 찾기
         for (String selector : titleSelectors) {
             try {
                 List<WebElement> titleElements = productElement.findElements(By.cssSelector(selector));
                 for (WebElement titleElement : titleElements) {
                     String text = titleElement.getText().trim();
                     log.debug("제목 후보 발견 - Selector: {}, Text: '{}'", selector, text);
+
                     if (isValidTitle(text)) {
                         log.debug("유효한 제목 선택: '{}'", text);
                         return text;
                     }
                 }
             } catch (Exception e) {
+                log.debug("Selector {} 실행 중 오류: {}", selector, e.getMessage());
                 continue;
             }
         }
 
-        // fallback 1: 모든 div, p, span 요소의 텍스트 확인
+        // 3. fallback: 모든 텍스트 요소에서 제목 후보 찾기
         try {
-            List<WebElement> textElements = productElement.findElements(By.cssSelector("div, p, span"));
+            List<WebElement> textElements = productElement.findElements(
+                    By.cssSelector("div:not([class*='price']):not([class*='time']), p:not([class*='price']):not([class*='time']), span:not([class*='price']):not([class*='time'])")
+            );
+
             for (WebElement element : textElements) {
                 String text = element.getText().trim();
-                if (isValidTitle(text)) {
+                if (isValidTitle(text) && !isTimePattern(text) && !isValidPrice(text)) {
                     log.debug("fallback으로 제목 발견: '{}'", text);
                     return text;
                 }
@@ -336,27 +359,24 @@ public class BunjangCrawlingService {
             log.debug("fallback 제목 추출 실패: {}", e.getMessage());
         }
 
-        // fallback 2: 전체 텍스트에서 첫 번째 유효한 라인 사용
+        // 4. 최종 fallback: 전체 텍스트에서 첫 번째 유효한 라인 사용
         try {
             String allText = productElement.getText().trim();
-            log.debug("전체 텍스트: '{}'", allText);
+            log.debug("전체 텍스트 분석: '{}'", allText);
 
             if (!allText.isEmpty()) {
                 String[] lines = allText.split("\n");
                 for (String line : lines) {
                     line = line.trim();
-                    if (isValidTitle(line)) {
+
+                    // 시간, 가격, 배송비 등의 패턴 제외
+                    if (isValidTitle(line) &&
+                            !isTimePattern(line) &&
+                            !isValidPrice(line) &&
+                            !isDeliveryPattern(line) &&
+                            !isLocationPattern(line)) {
                         log.debug("라인에서 제목 발견: '{}'", line);
                         return line;
-                    }
-                }
-
-                // 첫 번째 라인이 비어있지 않으면 사용
-                if (lines.length > 0 && !lines[0].trim().isEmpty()) {
-                    String firstLine = lines[0].trim();
-                    if (firstLine.length() > 2 && firstLine.length() < 200) {
-                        log.debug("첫 번째 라인을 제목으로 사용: '{}'", firstLine);
-                        return firstLine;
                     }
                 }
             }
@@ -368,22 +388,53 @@ public class BunjangCrawlingService {
         return "";
     }
 
+
+
+
+
+
+
+
     /**
-     * 상품 요소에서 가격 추출
+     * 상품 요소에서 가격 추출 (개선된 버전)
      */
-    private String extractPrice(WebElement productElement) {
-        // 번개장터 모바일 전용 가격 selector들
+    private String extractPrice(WebElement productElement, WebDriver driver) {
+        // 1. CSS ::after를 고려한 가격 추출 시도
+        try {
+            // JavaScript로 ::after content 추출 시도
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            String afterContent = (String) js.executeScript(
+                    "return window.getComputedStyle(arguments[0], '::after').getPropertyValue('content');",
+                    productElement
+            );
+
+            if (afterContent != null && !afterContent.equals("none") && !afterContent.equals("\"\"")) {
+                String cleanPrice = afterContent.replaceAll("[\"']", "").trim();
+                if (isValidPrice(cleanPrice)) {
+                    log.debug("::after에서 가격 발견: '{}'", cleanPrice);
+                    return cleanPrice;
+                }
+            }
+        } catch (Exception e) {
+            log.debug("::after 추출 실패: {}", e.getMessage());
+        }
+
+        // 2. 번개장터 모바일 전용 가격 selector들
         String[] priceSelectors = {
-                "div[class*='sc-'][class*='price']",
-                "div[class*='sc-']:last-child",
-                "div[class*='sc-']:nth-last-child(1)",
-                "div[class*='sc-']:nth-last-child(2)",
-                "[class*='price']",
-                "[class*='cost']",
-                "[class*='won']",
-                "div:last-child",
-                "p:last-child",
-                "span:last-child"
+                // 가격 전용 클래스
+                "[class*='price']:not(span):not([class*='time'])",
+                "[class*='cost']:not(span):not([class*='time'])",
+                "[class*='won']:not(span):not([class*='time'])",
+                // 구조적 접근 (가격은 보통 마지막에 위치)
+                "div[class*='sc-']:last-child:not([class*='time'])",
+                "div[class*='sc-']:nth-last-child(1):not([class*='time'])",
+                "div[class*='sc-']:nth-last-child(2):not([class*='time'])",
+                // CSS 가상요소를 가진 요소들
+                "div[class*='sc-'][data-price]",
+                "div[style*='after']",
+                // fallback
+                "strong:not([class*='time'])",
+                "b:not([class*='time'])"
         };
 
         for (String selector : priceSelectors) {
@@ -392,43 +443,50 @@ public class BunjangCrawlingService {
                 for (WebElement priceElement : priceElements) {
                     String text = priceElement.getText().trim();
                     log.debug("가격 후보 발견 - Selector: {}, Text: '{}'", selector, text);
-                    if (isValidPrice(text)) {
+
+                    if (isValidPrice(text) && !isTimePattern(text)) {
                         log.debug("유효한 가격 선택: '{}'", text);
                         return text;
                     }
+
+                    // 빈 텍스트지만 CSS로 표시되는 가격일 수 있음
+                    if (text.isEmpty()) {
+                        try {
+                            String computedStyle = ((JavascriptExecutor) driver).executeScript(
+                                    "return window.getComputedStyle(arguments[0]).getPropertyValue('content');",
+                                    priceElement
+                            ).toString();
+
+                            if (isValidPrice(computedStyle)) {
+                                log.debug("CSS content에서 가격 발견: '{}'", computedStyle);
+                                return computedStyle.replaceAll("[\"']", "");
+                            }
+                        } catch (Exception e) {
+                            // 무시하고 계속
+                        }
+                    }
                 }
             } catch (Exception e) {
+                log.debug("Selector {} 실행 중 오류: {}", selector, e.getMessage());
                 continue;
             }
         }
 
-        // fallback 1: 모든 텍스트 요소에서 가격 패턴 찾기
-        try {
-            List<WebElement> textElements = productElement.findElements(By.cssSelector("div, p, span"));
-            for (WebElement element : textElements) {
-                String text = element.getText().trim();
-                if (isValidPrice(text)) {
-                    log.debug("fallback으로 가격 발견: '{}'", text);
-                    return text;
-                }
-            }
-        } catch (Exception e) {
-            log.debug("fallback 가격 추출 실패: {}", e.getMessage());
-        }
-
-        // fallback 2: 전체 텍스트에서 가격 패턴 찾기
+        // 3. 패턴 기반 가격 추출
         try {
             String allText = productElement.getText();
             log.debug("가격 검색을 위한 전체 텍스트: '{}'", allText);
 
-            // 다양한 가격 패턴 매칭
+            // 한국어 가격 패턴들 (우선순위 순)
             String[] pricePatterns = {
-                    "\\d+[,\\d]*원",           // 1,000원
-                    "\\d+[,\\d]*만원",         // 10만원
-                    "\\d+[,\\d]*\\s*원",       // 1000 원
-                    "\\d+[,\\d]*$",           // 숫자만
-                    "원\\s*\\d+[,\\d]*",       // 원 1000
-                    "₩\\s*\\d+[,\\d]*"        // ₩ 1000
+                    "\\d{1,3}(?:,\\d{3})*원",           // 1,000원, 10,000원
+                    "\\d{1,3}(?:,\\d{3})*만원",         // 10만원, 100만원
+                    "\\d+만\\s*\\d*천?원",              // 10만 5천원
+                    "\\d+천원",                        // 5천원
+                    "\\d{1,3}(?:,\\d{3})*\\s*원",       // 1000 원 (공백 포함)
+                    "원\\s*\\d{1,3}(?:,\\d{3})*",       // 원 1000
+                    "₩\\s*\\d{1,3}(?:,\\d{3})*",        // ₩ 1000
+                    "\\d{4,}(?!분|시간|일|개월|년)",      // 4자리 이상 숫자 (시간 단위 제외)
             };
 
             for (String patternStr : pricePatterns) {
@@ -437,18 +495,18 @@ public class BunjangCrawlingService {
 
                 while (matcher.find()) {
                     String foundPrice = matcher.group().trim();
-                    if (isValidPrice(foundPrice)) {
+                    if (isValidPrice(foundPrice) && !isTimePattern(foundPrice)) {
                         log.debug("패턴으로 가격 발견: '{}'", foundPrice);
                         return foundPrice;
                     }
                 }
             }
 
-            // 라인별로 검사
+            // 라인별 검사 (시간 패턴 제외)
             String[] lines = allText.split("\n");
             for (String line : lines) {
                 line = line.trim();
-                if (isValidPrice(line)) {
+                if (isValidPrice(line) && !isTimePattern(line) && !isDeliveryPattern(line)) {
                     log.debug("라인에서 가격 발견: '{}'", line);
                     return line;
                 }
@@ -463,27 +521,49 @@ public class BunjangCrawlingService {
     }
 
     /**
-     * 유효한 제목인지 확인 (조건 완화)
+     * 유효한 제목인지 검증 (개선된 버전)
      */
-    private boolean isValidTitle(String title) {
-        if (title == null || title.isEmpty()) {
+    private boolean isValidTitle(String text) {
+        if (text == null || text.trim().isEmpty()) {
             return false;
         }
 
-        // 길이 조건 완화
-        if (title.length() < 2 || title.length() > 300) {
+        text = text.trim();
+
+        // 길이 체크
+        if (text.length() < 2 || text.length() > 200) {
             return false;
         }
 
-        // 가격 패턴이 아닌지 확인 (조건 완화)
-        if (title.matches("^\\d+[,\\d]*원?$") ||
-                title.matches("^[0-9,\\s]+$") ||
-                title.matches("^\\d+만원$")) {
-            return false;
+        // 제외할 패턴들
+        String[] excludePatterns = {
+                "^\\d+분\\s*전$",                    // "15분 전"
+                "^\\d+시간\\s*전$",                  // "2시간 전"
+                "^\\d+일\\s*전$",                    // "3일 전"
+                "^\\d+개월\\s*전$",                  // "1개월 전"
+                "^방금$",                           // "방금"
+                "^배송비\\s*포함$",                  // "배송비포함"
+                "^무료배송$",                       // "무료배송"
+                "^택배비\\s*별도$",                  // "택배비별도"
+                "^직거래$",                         // "직거래"
+                "^\\d{1,3}(?:,\\d{3})*원$",         // 가격 패턴
+                "^\\d+만원$",                       // 만원 단위
+                "^찜\\s*\\d+$",                     // "찜 123"
+                "^조회\\s*\\d+$",                   // "조회 456"
+                "^AD$",                            // "AD"
+                "^광고$",                          // "광고"
+                "^SOLD$",                          // "SOLD"
+                "^판매완료$"                        // "판매완료"
+        };
+
+        for (String pattern : excludePatterns) {
+            if (text.matches(pattern)) {
+                return false;
+            }
         }
 
-        // 의미있는 텍스트인지 확인
-        if (title.matches("^[\\s\\-_=.]+$")) {
+        // 한글, 영문, 숫자, 기본 특수문자만 허용
+        if (!text.matches("[가-힣a-zA-Z0-9\\s\\-_.,()\\[\\]{}+&/]*")) {
             return false;
         }
 
@@ -491,22 +571,125 @@ public class BunjangCrawlingService {
     }
 
     /**
-     * 유효한 가격인지 확인 (조건 완화)
+     * 유효한 가격인지 검증 (개선된 버전)
      */
-    private boolean isValidPrice(String price) {
-        if (price == null || price.isEmpty()) {
+    private boolean isValidPrice(String text) {
+        if (text == null || text.trim().isEmpty()) {
             return false;
         }
 
-        // 다양한 가격 패턴 허용
-        return price.matches(".*\\d+[,\\d]*원.*") ||
-                price.matches(".*\\d+[,\\d]*만원.*") ||
-                price.matches(".*\\d+[,\\d]*\\s*원.*") ||
-                price.matches("^\\d+[,\\d]*$") ||  // 숫자만
-                price.contains("원") ||
-                price.contains("₩") ||
-                (price.matches(".*\\d+.*") && price.length() < 20); // 숫자 포함하고 짧은 텍스트
+        text = text.trim().replaceAll("[\"']", ""); // 따옴표 제거
+
+        // 시간 패턴 체크 (가격이 아님)
+        if (isTimePattern(text)) {
+            return false;
+        }
+
+        // 배송 관련 패턴 체크 (가격이 아님)
+        if (isDeliveryPattern(text)) {
+            return false;
+        }
+
+        // 유효한 가격 패턴들
+        String[] validPricePatterns = {
+                "^\\d{1,3}(?:,\\d{3})*원$",         // 1,000원
+                "^\\d{1,3}(?:,\\d{3})*만원$",       // 10만원
+                "^\\d+만\\s*\\d*천?원$",            // 10만 5천원
+                "^\\d+천원$",                      // 5천원
+                "^\\d{1,3}(?:,\\d{3})*$",          // 숫자만 (1000, 10000 등)
+                "^₩\\s*\\d{1,3}(?:,\\d{3})*$"      // ₩1000
+        };
+
+        for (String pattern : validPricePatterns) {
+            if (text.matches(pattern)) {
+                // 숫자만 있는 경우 최소값 체크 (너무 작은 숫자는 가격이 아닐 가능성)
+                if (text.matches("^\\d+$")) {
+                    try {
+                        int price = Integer.parseInt(text.replaceAll(",", ""));
+                        return price >= 100; // 최소 100원
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    /**
+     * 시간 패턴인지 확인
+     */
+    private boolean isTimePattern(String text) {
+        if (text == null) return false;
+
+        String[] timePatterns = {
+                "^\\d+분\\s*전$",
+                "^\\d+시간\\s*전$",
+                "^\\d+일\\s*전$",
+                "^\\d+개월\\s*전$",
+                "^\\d+년\\s*전$",
+                "^방금$",
+                "^just now$",
+                "^\\d+m ago$",
+                "^\\d+h ago$",
+                "^\\d+d ago$"
+        };
+
+        for (String pattern : timePatterns) {
+            if (text.matches(pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 배송 관련 패턴인지 확인
+     */
+    private boolean isDeliveryPattern(String text) {
+        if (text == null) return false;
+
+        String[] deliveryPatterns = {
+                "^배송비\\s*포함$",
+                "^배송비\\s*별도$",
+                "^무료배송$",
+                "^택배비\\s*포함$",
+                "^택배비\\s*별도$",
+                "^직거래$",
+                "^직거래\\s*가능$",
+                "^택배거래$",
+                "^반값택배$"
+        };
+
+        for (String pattern : deliveryPatterns) {
+            if (text.matches(pattern)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 지역 패턴인지 확인
+     */
+    private boolean isLocationPattern(String text) {
+        if (text == null) return false;
+
+        // 간단한 지역 패턴 체크
+        return text.matches("^[가-힣]+시$|^[가-힣]+구$|^[가-힣]+동$|^[가-힣]+읍$|^[가-힣]+면$");
+    }
+
+
+
+
+
+
+
+
 
     /**
      * 유효한 상품 데이터인지 확인
