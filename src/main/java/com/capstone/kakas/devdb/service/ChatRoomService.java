@@ -5,13 +5,19 @@ import com.capstone.kakas.apiPayload.exception.handler.TempHandler;
 import com.capstone.kakas.devdb.domain.*;
 import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import com.capstone.kakas.devdb.dto.request.ChatRoomRequestDto;
+import com.capstone.kakas.devdb.dto.response.AiApiResponse;
 import com.capstone.kakas.devdb.dto.response.ChatRoomResponseDto;
 import com.capstone.kakas.devdb.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import org.springframework.http.HttpStatusCode;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +29,12 @@ public class ChatRoomService {
     private final MemberRepository memberRepository;
     private final ChatAnalysisRepository chatAnalysisRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final WebClient webClient;
+
+
+    private static final String AI_API_URL = "http://3.104.109.169:3000/chat";
+
+
 
     // 카테고리별 상품 데이터 - ProductCategory enum 활용
     private static final Map<ProductCategory, List<String>> CATEGORY_PRODUCTS = Map.of(
@@ -301,28 +313,55 @@ public class ChatRoomService {
 //    public ChatRoomResponseDto.messageAnalysisResultDto messageAnalysis(ChatRoomRequestDto.messageAnalysisDto request){
     public String messageAnalysis(ChatRoomRequestDto.messageAnalysisDto request){
 
-        // ChatRoom 조회 title로
-        ChatRoom chatRoom = chatRoomRepository.findByTitle(request.getChatRoomTitle())
+        // ChatRoom 조회 id로
+        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
                 .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
 
-        // ChatRoom 조회 id로 -> 프론트와 협의
-//        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
-//                .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
 
 
         // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
-//        ChatRoomRequestDto.aiRequestDto aiRequestDto = ChatRoomRequestDto.aiRequestDto.builder()
-//                .productName(chatRoom.getProduct().getName())
-//                .title(chatRoom.getTitle())
-//                .content(chatRoom.getContent())
-//                .price(chatRoom.getPrice())
-//                .deliveryFee(chatRoom.getDeliveryFee())
-//                .message(request.getMessage())
-//                .build();
-////        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
-//        String analysisResult =
+        ChatRoomRequestDto.aiRequestDto aiRequestDto = ChatRoomRequestDto.aiRequestDto.builder()
+                .chatRoom(chatRoom)
+                .message(request.getMessage())
+                .build();
+//        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
 
-        String analysisResult = "분석결과 temp";
+
+
+
+
+        String analysisResult;
+        try {
+            AiApiResponse aiResponse = webClient.post()
+                    .uri(AI_API_URL)
+                    .header("Content-Type", "application/json")
+                    .bodyValue(aiRequestDto)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                        return Mono.error(new RuntimeException("AI API 클라이언트 오류: " + response.statusCode()));
+                    })
+                    .onStatus(HttpStatusCode::is5xxServerError, response -> {
+                        return Mono.error(new RuntimeException("AI API 서버 오류: " + response.statusCode()));
+                    })
+                    .bodyToMono(AiApiResponse.class)
+                    .timeout(Duration.ofSeconds(30)) // 30초 타임아웃
+                    .block(); // 동기 호출
+
+            analysisResult = aiResponse != null ? aiResponse.getAnalysis() : "분석 결과를 받을 수 없습니다.";
+
+        } catch (Exception e) {
+            // AI API 호출 실패 시 기본값 사용
+            analysisResult = "AI 분석 서비스 일시 중단 - 분석결과 temp";
+            // 로깅
+            System.err.println("AI API 호출 실패: " + e.getMessage());
+        }
+
+
+
+
+
+
+
 
 
         // 채팅 메세지 저장
@@ -347,4 +386,60 @@ public class ChatRoomService {
 
         return analysisResult;
     }
+
+
+
+
+
+
+
+
+
+    // 4. 비동기 버전 (선택사항)
+    @Transactional
+    public CompletableFuture<String> messageAnalysisAsync(ChatRoomRequestDto.messageAnalysisDto request) {
+
+        // ChatRoom 조회
+        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
+                .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
+
+        // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
+        ChatRoomRequestDto.aiRequestDto aiRequestDto = ChatRoomRequestDto.aiRequestDto.builder()
+                .chatRoom(chatRoom)
+                .message(request.getMessage())
+                .build();
+
+        // 비동기 AI API 호출
+        return webClient.post()
+                .uri(AI_API_URL)
+                .header("Content-Type", "application/json")
+                .bodyValue(aiRequestDto)
+                .retrieve()
+                .bodyToMono(AiApiResponse.class)
+                .timeout(Duration.ofSeconds(30))
+                .map(response -> response.getAnalysis())
+                .onErrorReturn("AI 분석 서비스 오류")
+                .toFuture()
+                .thenApply(analysisResult -> {
+                    // 데이터 저장 로직
+                    ChatMessage message = ChatMessage.builder()
+                            .message(request.getMessage())
+                            .build();
+
+                    chatRoom.addChatMessage(message);
+
+                    ChatAnalysis chatAnalysis = ChatAnalysis.builder()
+                            .analysis(analysisResult)
+                            .build();
+                    message.addChatAnalysis(chatAnalysis);
+
+                    chatRoomRepository.save(chatRoom);
+
+                    return analysisResult;
+                });
+    }
+
+
+
+
 }
