@@ -50,6 +50,7 @@ dependencies {
 	implementation 'io.github.bonigarcia:webdrivermanager:5.6.3'
 	implementation 'org.seleniumhq.selenium:selenium-support:4.15.0'
 	implementation 'org.jsoup:jsoup:1.15.4'
+	implementation 'org.apache.commons:commons-text:1.13.1'
 
 }
 

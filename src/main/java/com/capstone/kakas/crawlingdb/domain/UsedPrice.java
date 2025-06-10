@@ -3,6 +3,8 @@ package com.capstone.kakas.crawlingdb.domain;
 import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -24,9 +26,19 @@ public class UsedPrice extends BaseEntity {
     @Column(nullable = false)
     private int price;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @CreatedDate
+    private LocalDateTime crawledAt;
+
+    public void setPrice(int price) {
+        this.price = price;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
 }
 

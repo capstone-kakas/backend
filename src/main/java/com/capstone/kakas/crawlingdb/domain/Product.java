@@ -3,6 +3,7 @@ package com.capstone.kakas.crawlingdb.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -35,4 +36,7 @@ public class Product {
     @Column(name = "price_selector", columnDefinition = "TEXT")
     private String priceSelector;
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "used_price_id")
+    private List<UsedPrice> usedPrices = new ArrayList<>();
 }

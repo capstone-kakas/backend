@@ -18,5 +18,4 @@ public class UsedPriceResultDto {
     private Integer sampleCount;
     private Integer minPrice;
     private Integer maxPrice;
-    private LocalDateTime calculatedAt;
 }

@@ -1,7 +1,9 @@
 package com.capstone.kakas.crawlingdb.controller;
 
 import com.capstone.kakas.apiPayload.ApiResponse;
+import com.capstone.kakas.crawlingdb.domain.UsedPrice;
 import com.capstone.kakas.crawlingdb.dto.CrawlingResultDto;
+import com.capstone.kakas.crawlingdb.dto.UsedPriceResultDto;
 import com.capstone.kakas.crawlingdb.dto.request.ProductCrawlingDto;
 import com.capstone.kakas.crawlingdb.service.BunjangCrawlingService;
 import com.capstone.kakas.crawlingdb.service.TitleFilteringService;
@@ -37,7 +39,7 @@ public class BunjangCrawlingController {
         // 3. alias replacement
         List<CrawlingResultDto> replaceAliasResult = titleFilteringService.replaceAlias(includeFilteredResult);
         // 4. 유사도비교 filtering
-        List<CrawlingResultDto> filteredResult = titleFilteringService.cosineSimilarityFiltering(replaceAliasResult);
+        List<UsedPriceResultDto> filteredResult = titleFilteringService.cosineSimilarityFiltering(replaceAliasResult);
 
         // 중고판매가 저장
 
@@ -49,6 +51,6 @@ public class BunjangCrawlingController {
 //        //필터링을 거친 가격들의 평균들을 구해 Product의 연관 entity인 UsedPrice에 가격 저장 + 크롤링시간(createdAt)
 //        List<UsedPriceResultDto> usedPriceResult = bunjangCrawlingService.calculateUsedPrice(filteredResult);
 
-        return ApiResponse.onSuccess(replaceAliasResult);
+        return ApiResponse.onSuccess(filteredResult);
     }
 }
