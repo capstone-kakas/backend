@@ -50,11 +50,11 @@ public class ChatController {
     // ai api post /recommend
     @GetMapping("/recommend/{chatRoomId}")
     @Operation(summary = "채팅방생성 직후 추천 질문 - 분석",description = "채팅방 id를 통해 채팅방의 data를 ai 서버에 분석요청 후 추천답변 반환")
-    public ApiResponse<String> recommendQuestion(
+    public ApiResponse<List<String>> recommendQuestion(
             @PathVariable("chatRoomId") Long chatRoomId
     ) {
 
-        String response = chatRoomService.recommendQuestion(chatRoomId);
+        List<String> response = chatRoomService.recommendQuestion(chatRoomId);
 
         return ApiResponse.onSuccess(response);
     }
