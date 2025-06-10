@@ -15,6 +15,7 @@ public class ChatAnalysis extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "TEXT")
     private String analysis;
 
     @ManyToOne

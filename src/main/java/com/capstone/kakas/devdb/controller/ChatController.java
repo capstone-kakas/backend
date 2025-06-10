@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -46,6 +47,7 @@ public class ChatController {
 
 
     //채팅방 첫질문 추천
+    // ai api post /recommend
     @GetMapping("/recommend/{chatRoomId}")
     @Operation(summary = "채팅방생성 직후 추천 질문 - 분석",description = "채팅방 id를 통해 채팅방의 data를 ai 서버에 분석요청 후 추천답변 반환")
     public ApiResponse<String> recommendQuestion(
@@ -65,17 +67,17 @@ public class ChatController {
     //채팅방 메세지 분석 controller
     @PostMapping("/message")
     @Operation(summary = "채팅방 메세지 분석 API",description = "채팅방id와 메세지를 통해 ai 분석을 반환")
-    public ApiResponse<String> messageAnalysis(
+    public ApiResponse<List<String>> messageAnalysis(
             @RequestBody ChatRoomRequestDto.messageAnalysisDto request
     ){
-        String response = chatRoomService.messageAnalysis(request);
+        List<String> response = chatRoomService.messageAnalysis(request);
         return ApiResponse.onSuccess(response);
     }
 
 
 
     @PostMapping("/message/async")
-    @Operation(summary = "채팅방 메세지 분석 API",description = "채팅방id와 메세지를 통해 ai 분석을 반환 / ai api 비동기적으로 사용")
+    @Operation(summary = "채팅방 메세지 분석 API - 사용X",description = "채팅방id와 메세지를 통해 ai 분석을 반환 / ai api 비동기적으로 사용")
     public ApiResponse<CompletableFuture<String>> asyncMessageAnalysis(
             @RequestBody ChatRoomRequestDto.messageAnalysisDto request
     ){

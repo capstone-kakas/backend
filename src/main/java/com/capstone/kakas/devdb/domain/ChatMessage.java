@@ -25,8 +25,8 @@ public class ChatMessage extends BaseEntity {
     @JoinColumn(name = "chat_room_id")
     private ChatRoom chatRoom;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chat_analysis_id", nullable = false)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_analysis_id")
     private List<ChatAnalysis> chatAnalyses = new ArrayList<>();
 
 
@@ -35,8 +35,21 @@ public class ChatMessage extends BaseEntity {
         this.chatRoom = chatRoom;
     }
 
-    public void addChatAnalysis(ChatAnalysis analysis) {
-        chatAnalyses.add(analysis);
-        analysis.setChatMessage(this);
+    // 연관관계 편의 메서드 - null 체크 추가
+    public void addChatAnalysis(ChatAnalysis chatAnalysis) {
+        if (this.chatAnalyses == null) {
+            this.chatAnalyses = new ArrayList<>();
+        }
+        this.chatAnalyses.add(chatAnalysis);
+        chatAnalysis.setChatMessage(this);
     }
+
+    // Getter에서도 null 체크
+    public List<ChatAnalysis> getChatAnalyses() {
+        if (this.chatAnalyses == null) {
+            this.chatAnalyses = new ArrayList<>();
+        }
+        return this.chatAnalyses;
+    }
+
 }
