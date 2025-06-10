@@ -4,6 +4,8 @@ import com.capstone.kakas.devdb.domain.ChatRoom;
 import com.capstone.kakas.devdb.domain.enums.ProductCategory;
 import lombok.*;
 
+import java.util.List;
+
 public class ChatRoomRequestDto {
 
     @Builder
@@ -37,16 +39,17 @@ public class ChatRoomRequestDto {
     @AllArgsConstructor
     public static class messageAnalysisDto{
         private Long chatRoomId;
-        private String message;
+        private List<messageRequestDto> message;
     }
 
     @Getter
-    @Setter
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class aiRequestDto {
-        private ChatRoom chatRoom;
-        private String message;
+    public static class messageRequestDto{
+        private String text;
+        private String sender;
+        private String time;
     }
+
 }
