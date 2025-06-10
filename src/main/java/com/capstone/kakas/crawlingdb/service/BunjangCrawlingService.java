@@ -606,7 +606,7 @@ public class BunjangCrawlingService {
                 if (text.matches("^\\d+$")) {
                     try {
                         int price = Integer.parseInt(text.replaceAll(",", ""));
-                        return price >= 100; // 최소 100원
+                        return price >= 50000; // 최소 5만원
                     } catch (NumberFormatException e) {
                         return false;
                     }

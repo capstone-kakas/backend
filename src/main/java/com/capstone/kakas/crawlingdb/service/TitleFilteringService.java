@@ -3,6 +3,7 @@ package com.capstone.kakas.crawlingdb.service;
 import com.capstone.kakas.crawlingdb.domain.*;
 import com.capstone.kakas.crawlingdb.dto.CrawlingResultDto;
 import com.capstone.kakas.crawlingdb.dto.FilteredResultDto;
+import com.capstone.kakas.crawlingdb.dto.UsedPriceResultDto;
 import com.capstone.kakas.crawlingdb.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +89,7 @@ public class TitleFilteringService {
         log.info("=== ExcludeKeyword 필터링 완료 ===");
         log.info("제외된 항목 수: {}", excludedCount);
         log.info("필터링 후 항목 수: {}", filteredResults.size());
-        log.info("필터링 비율: {:.2f}%",
+        log.info("필터링 비율: {}%",
                 crawlingResults.size() > 0 ? (double) excludedCount / crawlingResults.size() * 100 : 0);
 
         return filteredResults;
@@ -167,7 +168,7 @@ public class TitleFilteringService {
         log.info("자동 통과 항목 수 (IncludeKeyword 없음): {}", noIncludeKeywordCount);
         log.info("제외된 항목 수: {}", excludedCount);
         log.info("필터링 후 항목 수: {}", filteredResults.size());
-        log.info("필터링 비율: {:.2f}%",
+        log.info("필터링 비율: {}%",
                 crawlingResults.size() > 0 ? (double) excludedCount / crawlingResults.size() * 100 : 0);
 
         return filteredResults;
@@ -277,7 +278,7 @@ public class TitleFilteringService {
 
 //    * 4. 코사인 유사도 필터링 (추후 구현 예정)
 //     */
-public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto> crawlingResults) {
+public List<UsedPriceResultDto> cosineSimilarityFiltering(List<CrawlingResultDto> crawlingResults) {
     log.info("=== 코사인 유사도 필터링 시작 ===");
     log.info("입력 항목 수: {}", crawlingResults.size());
 
@@ -319,10 +320,8 @@ public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto>
     log.info("유효 항목 수: {} / 전체 항목 수: {} (제외된 항목: {})",
             validResults.size(), crawlingResults.size(), crawlingResults.size() - validResults.size());
 
-    // 유효한 결과로 평균 가격 계산 및 저장
-    saveAveragePrices(validResults);
-
-    return validResults;
+    // 유효한 결과로 평균 가격 계산 및 저장하고 결과 반환
+    return saveAveragePrices(validResults);
 }
 
     /**
@@ -398,8 +397,10 @@ public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto>
      * 유효한 결과의 평균 가격을 계산하고 UsedPrice 엔티티에 저장
      */
     @Transactional
-    public void saveAveragePrices(List<CrawlingResultDto> validResults) {
+    public List<UsedPriceResultDto> saveAveragePrices(List<CrawlingResultDto> validResults) {
         log.info("=== 평균 가격 계산 및 저장 시작 ===");
+
+        List<UsedPriceResultDto> resultList = new ArrayList<>();
 
         // 제품별로 그룹화
         Map<Long, List<CrawlingResultDto>> groupedByProduct = validResults.stream()
@@ -413,7 +414,7 @@ public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto>
                 // 가격 파싱 및 평균 계산
                 List<Integer> prices = productResults.stream()
                         .map(this::parsePrice)
-                        .filter(price -> price != null && price > 0)
+                        .filter(price -> price != null && price > 50000)
                         .collect(Collectors.toList());
 
                 if (prices.isEmpty()) {
@@ -427,6 +428,8 @@ public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto>
                         .orElse(0.0);
 
                 int avgPrice = (int) Math.round(averagePrice);
+                int minPrice = prices.stream().mapToInt(Integer::intValue).min().orElse(0);
+                int maxPrice = prices.stream().mapToInt(Integer::intValue).max().orElse(0);
 
                 log.info("제품 ID {}: {} 개 가격 샘플, 평균 가격: {}원",
                         productId, prices.size(), String.format("%,d", avgPrice));
@@ -445,6 +448,18 @@ public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto>
 
                     log.info("제품 '{}' (ID: {})의 평균 가격 {}원이 저장되었습니다.",
                             product.getName(), productId, String.format("%,d", avgPrice));
+
+                    // 결과 DTO 생성
+                    UsedPriceResultDto resultDto = new UsedPriceResultDto();
+                    resultDto.setProductId(productId);
+                    resultDto.setProductName(product.getName());
+                    resultDto.setAveragePrice(avgPrice);
+                    resultDto.setSampleCount(prices.size());
+                    resultDto.setMinPrice(minPrice);
+                    resultDto.setMaxPrice(maxPrice);
+
+                    resultList.add(resultDto);
+
                 } else {
                     log.error("제품 ID {}를 찾을 수 없습니다.", productId);
                 }
@@ -455,6 +470,7 @@ public List<CrawlingResultDto> cosineSimilarityFiltering(List<CrawlingResultDto>
         }
 
         log.info("=== 평균 가격 계산 및 저장 완료 ===");
+        return resultList;
     }
 
     /**
