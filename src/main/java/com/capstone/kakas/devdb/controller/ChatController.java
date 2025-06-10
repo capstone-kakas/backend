@@ -2,6 +2,7 @@ package com.capstone.kakas.devdb.controller;
 
 import com.capstone.kakas.apiPayload.ApiResponse;
 import com.capstone.kakas.devdb.dto.request.ChatRoomRequestDto;
+import com.capstone.kakas.devdb.dto.response.AiApiResponse;
 import com.capstone.kakas.devdb.dto.response.ChatRoomResponseDto;
 import com.capstone.kakas.devdb.service.ChatRoomService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +42,26 @@ public class ChatController {
 
         return ApiResponse.onSuccess(response);
     }
+
+
+
+    //채팅방 첫질문 추천
+    @GetMapping("/recommend/{chatRoomId}")
+    @Operation(summary = "채팅방생성 직후 추천 질문 - 분석",description = "채팅방 id를 통해 채팅방의 data를 ai 서버에 분석요청 후 추천답변 반환")
+    public ApiResponse<String> recommendQuestion(
+            @PathVariable("chatRoomId") Long chatRoomId
+    ) {
+
+        String response = chatRoomService.recommendQuestion(chatRoomId);
+
+        return ApiResponse.onSuccess(response);
+    }
+
+
+
+
+
+
 
     //채팅방 메세지 분석 controller
     @PostMapping("/message")
