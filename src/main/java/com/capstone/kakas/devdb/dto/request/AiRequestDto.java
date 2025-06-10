@@ -22,8 +22,11 @@ public class AiRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class aiRequestDto {
-        private ChatRoom chatRoom;
+    public static class messageAnalysisRequestDto {
+        private String chatTitle;
+        private String chatContent;
+        private String price;
+        private String status;
         private String message;
     }
 }

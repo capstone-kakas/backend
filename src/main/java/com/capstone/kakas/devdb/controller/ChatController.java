@@ -62,7 +62,6 @@ public class ChatController {
 
 
 
-
     //채팅방 메세지 분석 controller
     @PostMapping("/message")
     @Operation(summary = "채팅방 메세지 분석 API",description = "채팅방id와 메세지를 통해 ai 분석을 반환")

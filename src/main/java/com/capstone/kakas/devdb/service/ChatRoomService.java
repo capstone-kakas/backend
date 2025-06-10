@@ -321,8 +321,11 @@ public class ChatRoomService {
 
 
         // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
-        AiRequestDto.aiRequestDto aiRequestDto = AiRequestDto.aiRequestDto.builder()
-                .chatRoom(chatRoom)
+        AiRequestDto.messageAnalysisRequestDto aiRequestDto = AiRequestDto.messageAnalysisRequestDto.builder()
+                .chatTitle(chatRoom.getTitle())
+                .chatContent(chatRoom.getContent())
+                .price(chatRoom.getPrice())
+                .status(chatRoom.getStatus())
                 .message(request.getMessage())
                 .build();
 //        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
@@ -405,8 +408,11 @@ public class ChatRoomService {
                 .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
 
         // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
-        AiRequestDto.aiRequestDto aiRequestDto = AiRequestDto.aiRequestDto.builder()
-                .chatRoom(chatRoom)
+        AiRequestDto.messageAnalysisRequestDto aiRequestDto = AiRequestDto.messageAnalysisRequestDto.builder()
+                .chatTitle(chatRoom.getTitle())
+                .chatContent(chatRoom.getContent())
+                .price(chatRoom.getPrice())
+                .status(chatRoom.getStatus())
                 .message(request.getMessage())
                 .build();
 
