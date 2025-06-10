@@ -25,7 +25,9 @@ public class SeleniumController {
 
     @GetMapping("/danawa")
     public Map<String, Object> parseWithSelenium() {
-        String url = "https://prod.danawa.com/info/?pcode=50129522&cate=11338950";
+//        String url = "https://prod.danawa.com/info/?pcode=50129522&cate=11338950";
+        String url = "https://prod.danawa.com/info/?pcode=14678867&keyword=%EB%8B%8C%ED%85%90%EB%8F%84+%EC%8A%A4%EC%9C%84%EC%B9%98+OLED&cate=11238041";
+
 
         // 1) Selenium으로 페이지를 로드한 뒤 Jsoup Document로 반환
         Document doc = fetchService.fetchBySelenium(url);

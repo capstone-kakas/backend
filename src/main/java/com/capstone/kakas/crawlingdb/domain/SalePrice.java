@@ -1,5 +1,7 @@
 package com.capstone.kakas.crawlingdb.domain;
 
+import com.capstone.kakas.crawlingdb.domain.enums.SiteName;
+import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,11 +11,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "sale_price")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SalePrice {
+public class SalePrice extends BaseEntity {
     /**
      * 새상품 가격 저장 엔티티
      */
@@ -21,20 +23,14 @@ public class SalePrice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "model_code_id", nullable = false)
-    private ModelCode modelCode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "site_id", nullable = false)
-    private Site site;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
-    @Column(nullable = false, length = 10)
-    private String currency;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    @Column(nullable = false)
-    private LocalDateTime crawledAt;
+    @Enumerated(EnumType.STRING)
+    private SiteName siteName;
 }

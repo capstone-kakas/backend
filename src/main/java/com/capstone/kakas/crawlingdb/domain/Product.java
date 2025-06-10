@@ -1,16 +1,14 @@
 package com.capstone.kakas.crawlingdb.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "product")
-@Data
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,9 +24,19 @@ public class Product {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 50)
-    private String category;
+    @Column(length = 100)
+    private String saleUrl;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Variant> variants;
+    @Column(name = "bunjang_url", length = 255)
+    private String bunjangUrl;
+
+    @Column(name = "title_selector", columnDefinition = "TEXT")
+    private String titleSelector;
+
+    @Column(name = "price_selector", columnDefinition = "TEXT")
+    private String priceSelector;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "used_price_id")
+    private List<UsedPrice> usedPrices = new ArrayList<>();
 }
