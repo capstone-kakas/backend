@@ -29,7 +29,7 @@ public class BunjangCrawlingController {
         List<ProductCrawlingDto> crawlingTargets = bunjangCrawlingService.getProductCrawlingMapping();
         // 매핑된 상품,url을 사용하여 각 url에서 판매제목과 가격을 크롤링
         List<CrawlingResultDto> crawlingResult = bunjangCrawlingService.executeCrawling(crawlingTargets);
-
+        // 크롤링된 판매제목
 
 
 

@@ -300,7 +300,7 @@ public class BunjangCrawlingService {
         // 1. 광고 요소 제외
         try {
             String elementText = productElement.getText();
-            if (elementText.contains("AD") || elementText.contains("광고")) {
+            if (elementText.contains("AD") || elementText.contains("광고") || elementText.contains("매입")) {
                 log.debug("광고 요소 발견, 제목 추출 건너뜀");
                 return "";
             }
