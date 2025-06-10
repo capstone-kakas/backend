@@ -18,5 +18,4 @@ public class FilteredResultDto {
     private Integer originalItemCount;
     private Integer filteredItemCount;
     private List<BunjangItemDto> filteredItems;
-    private LocalDateTime filteredAt;
 }

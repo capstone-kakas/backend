@@ -16,5 +16,4 @@ public class CrawlingResultDto {
     private String Url;
     private String price;
     private String SaleTitle;
-    private LocalDateTime crawledAt;
 }

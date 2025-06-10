@@ -3,9 +3,9 @@ package com.capstone.kakas.crawlingdb.controller;
 import com.capstone.kakas.apiPayload.ApiResponse;
 import com.capstone.kakas.crawlingdb.dto.CrawlingResultDto;
 import com.capstone.kakas.crawlingdb.dto.FilteredResultDto;
-import com.capstone.kakas.crawlingdb.dto.UsedPriceResultDto;
 import com.capstone.kakas.crawlingdb.dto.request.ProductCrawlingDto;
 import com.capstone.kakas.crawlingdb.service.BunjangCrawlingService;
+import com.capstone.kakas.crawlingdb.service.TitleFilteringService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/crawling")
@@ -22,6 +21,7 @@ import java.util.Map;
 public class BunjangCrawlingController {
 
     private final BunjangCrawlingService bunjangCrawlingService;
+    private final TitleFilteringService titleFilteringService;
 
     @PostMapping("/execute")
     public ApiResponse<List<CrawlingResultDto>> executeCrawling() {
@@ -30,7 +30,7 @@ public class BunjangCrawlingController {
         // 매핑된 상품,url을 사용하여 각 url에서 판매제목과 가격을 크롤링
         List<CrawlingResultDto> crawlingResult = bunjangCrawlingService.executeCrawling(crawlingTargets);
         // 크롤링된 판매제목
-
+        List<CrawlingResultDto> filteredResult = titleFilteringService.filteringTitle(crawlingResult);
 
 
 
@@ -41,6 +41,6 @@ public class BunjangCrawlingController {
 //        //필터링을 거친 가격들의 평균들을 구해 Product의 연관 entity인 UsedPrice에 가격 저장 + 크롤링시간(createdAt)
 //        List<UsedPriceResultDto> usedPriceResult = bunjangCrawlingService.calculateUsedPrice(filteredResult);
 
-        return ApiResponse.onSuccess(crawlingResult);
+        return ApiResponse.onSuccess(filteredResult);
     }
 }
