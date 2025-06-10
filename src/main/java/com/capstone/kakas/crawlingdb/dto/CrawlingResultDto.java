@@ -13,7 +13,7 @@ import java.util.List;
 public class CrawlingResultDto {
     private Long productId;
     private String productName;
-    private String Url;
+//    private String Url;
     private String price;
     private String SaleTitle;
 }

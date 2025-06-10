@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface ExcludeKeywordRepository extends JpaRepository<ExcludeKeyword, Long> {
-
+    List<ExcludeKeyword> findAllByProductId(Long product_id);
 }

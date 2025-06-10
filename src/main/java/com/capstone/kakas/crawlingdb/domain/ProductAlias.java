@@ -23,5 +23,7 @@ public class ProductAlias {
     @Column(nullable = false, length = 100)
     private String alias;
 
+    @Column(nullable = false, length = 100)
+    private String replacement;
 }
 

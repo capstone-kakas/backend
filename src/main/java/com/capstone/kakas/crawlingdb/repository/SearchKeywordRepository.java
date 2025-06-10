@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface SearchKeywordRepository extends JpaRepository<SearchKeyword, Long> {
-
+    List<SearchKeyword> findAllByProductId(Long productId);
 }

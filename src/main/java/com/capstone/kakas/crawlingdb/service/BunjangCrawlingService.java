@@ -211,7 +211,7 @@ public class BunjangCrawlingService {
                         result.setProductName(target.getProductName());
                         result.setSaleTitle(title);
                         result.setPrice(price);
-                        result.setUrl(target.getUrl());
+//                        result.setUrl(target.getUrl());
 
                         results.add(result);
                         log.info("상품 추가 - 제목: '{}', 가격: '{}'", title, price);
@@ -239,7 +239,7 @@ public class BunjangCrawlingService {
                         result.setProductName(target.getProductName());
                         result.setSaleTitle(title);
                         result.setPrice(price);
-                        result.setUrl(target.getUrl());
+//                        result.setUrl(target.getUrl());
 
                         results.add(result);
                     }
