@@ -34,7 +34,7 @@ public class ChatRoomService {
 
 
     private static final String AI_RECOMMEND_API = "http://52.63.203.92:3000/recommend";
-
+    private static final String AI_INIT_API = "http://52.63.203.92:3000/recommend";
 
 
     // 카테고리별 상품 데이터 - ProductCategory enum 활용
@@ -472,7 +472,7 @@ public class ChatRoomService {
 
 
     // post /recommend
-    public String recommendQuestion(Long chatRoomId){
+    public List<String> recommendQuestion(Long chatRoomId){
 
         // ChatRoom 조회
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
@@ -488,10 +488,11 @@ public class ChatRoomService {
 
 
 
-        String analysisResult;
+        List<String> analysisResultList;
+
         try {
             AiApiResponse aiResponse = webClient.post()
-                    .uri(AI_RECOMMEND_API)
+                    .uri(AI_INIT_API)
                     .header("Content-Type", "application/json")
                     .bodyValue(aiRequestDto)
                     .retrieve()
@@ -502,20 +503,23 @@ public class ChatRoomService {
                         return Mono.error(new RuntimeException("AI API 서버 오류: " + response.statusCode()));
                     })
                     .bodyToMono(AiApiResponse.class)
-                    .timeout(Duration.ofSeconds(15)) // 30초 타임아웃
-                    .block(); // 동기 호출
+                    .timeout(Duration.ofMinutes(3))
+                    .block();
 
-            analysisResult = aiResponse != null ? aiResponse.getAnalysis() : "분석 결과를 받을 수 없습니다.";
+            if (aiResponse != null && aiResponse.getResponse() != null && !aiResponse.getResponse().isEmpty()) {
+                analysisResultList = aiResponse.getResponse(); // List<String> 직접 사용
+            } else {
+                analysisResultList = Arrays.asList("분석 결과를 받을 수 없습니다.");
+            }
 
         } catch (Exception e) {
-            // AI API 호출 실패 시 기본값 사용
-            analysisResult = "AI 분석 서비스 일시 중단 - 분석결과 temp";
-            // 로깅
+            analysisResultList = Arrays.asList("AI 분석 서비스 일시 중단 - 분석결과 temp");
             System.err.println("AI API 호출 실패: " + e.getMessage());
+            e.printStackTrace();
         }
 
 
-        return analysisResult;
+        return analysisResultList;
     }
 
 
