@@ -17,4 +17,9 @@ import java.util.Optional;
 @Repository
 public interface SalePriceRepository extends JpaRepository<SalePrice, Long> {
     Optional<SalePrice> findTopByProductOrderByCreatedAtDesc(Product product);
+
+    @Query("SELECT sp FROM SalePrice sp WHERE sp.product.id = :productId " +
+            "AND sp.createdAt = (SELECT MAX(sp2.createdAt) FROM SalePrice sp2 " +
+            "WHERE sp2.product.id = :productId AND sp2.siteName = sp.siteName)")
+    List<SalePrice> findLatestSalePricesByProduct(@Param("productId") Long productId);
 }

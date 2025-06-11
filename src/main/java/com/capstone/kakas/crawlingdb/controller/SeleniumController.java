@@ -94,7 +94,7 @@ public class SeleniumController {
      * 사이트별 가격 정보를 SalePrice 엔티티에 저장
      */
     private int saveSalePrices(Product product, Map<String, String> sitePriceMap) {
-
+        // 기존 SalePrice 데이터 삭제 (최신 데이터로 갱신)
 
         List<SalePrice> salePrices = new ArrayList<>();
         int savedCount = 0;
@@ -151,7 +151,7 @@ public class SeleniumController {
                 SalePrice salePrice = new SalePrice();
                 salePrice.setProduct(product);
                 salePrice.setPrice(price);
-                salePrice.setSiteName(SiteName.BUNGAE);
+                salePrice.setSiteName(SiteName.AUCTION);
                 salePrices.add(salePrice);
                 savedCount++;
             } catch (NumberFormatException e) {
