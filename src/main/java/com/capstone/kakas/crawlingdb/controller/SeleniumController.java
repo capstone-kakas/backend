@@ -1,5 +1,11 @@
 package com.capstone.kakas.crawlingdb.controller;
 
+import com.capstone.kakas.crawlingdb.domain.Product;
+import com.capstone.kakas.crawlingdb.domain.SalePrice;
+import com.capstone.kakas.crawlingdb.domain.enums.SiteName;
+import com.capstone.kakas.crawlingdb.repository.ProductRepository;
+import com.capstone.kakas.crawlingdb.repository.SalePriceRepository;
+import lombok.RequiredArgsConstructor;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -15,42 +21,169 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/selenium")
+@RequiredArgsConstructor
 public class SeleniumController {
 
     private final SeleniumFetchService fetchService;
+    private final ProductRepository productRepository;
+    private final SalePriceRepository salePriceRepository;
 
-    public SeleniumController(SeleniumFetchService fetchService) {
-        this.fetchService = fetchService;
-    }
 
     @GetMapping("/danawa")
     public Map<String, Object> parseWithSelenium() {
-//        String url = "https://prod.danawa.com/info/?pcode=50129522&cate=11338950";
-        String url = "https://prod.danawa.com/info/?pcode=14678867&keyword=%EB%8B%8C%ED%85%90%EB%8F%84+%EC%8A%A4%EC%9C%84%EC%B9%98+OLED&cate=11238041";
+        // DB에서 모든 Product 정보 가져오기
+        List<Product> products = productRepository.findAll();
+
+        Map<String, Object> finalResult = new HashMap<>();
+        List<Map<String, Object>> allResults = new ArrayList<>();
+        int totalProcessed = 0;
+        int totalSaved = 0;
+
+        for (Product product : products) {
+            if (product.getSaleUrl() == null || product.getSaleUrl().isEmpty()) {
+                continue; // saleUrl이 없으면 건너뛰기
+            }
+
+            try {
+                String url = product.getSaleUrl();
+
+                // 1) Selenium으로 페이지를 로드한 뒤 Jsoup Document로 반환
+                Document doc = fetchService.fetchBySelenium(url);
+
+                // 2) <title> 태그 추출
+                String title = doc.title();
+
+                // 3) 사이트별 판매가 정보 추출 (쿠팡, G마켓, 11번가, 옥션 등)
+                Map<String, String> sitePriceMap = extractSitePriceMapping(doc);
+
+                // 4) 결과 맵에 저장
+                Map<String, Object> result = new HashMap<>();
+                result.put("title", title);
+                result.put("productId", product.getId());
+                result.put("productName", product.getName());
+
+                // 개별 사이트 가격 정보도 포함
+                result.put("쿠팡", sitePriceMap.getOrDefault("쿠팡", "정보 없음"));
+                result.put("G마켓", sitePriceMap.getOrDefault("G마켓", "정보 없음"));
+                result.put("11번가", sitePriceMap.getOrDefault("11번가", "정보 없음"));
+                result.put("옥션", sitePriceMap.getOrDefault("옥션", "정보 없음"));
+
+                // 5) SalePrice에 저장
+                int savedCount = saveSalePrices(product, sitePriceMap);
+                result.put("savedPricesCount", savedCount);
+
+                allResults.add(result);
+                totalProcessed++;
+                totalSaved += savedCount;
+
+            } catch (Exception e) {
+                System.err.println("Product ID " + product.getId() + " 처리 중 오류 발생: " + e.getMessage());
+            }
+        }
+
+        // 전체 결과 반환
+        finalResult.put("totalProducts", products.size());
+        finalResult.put("totalProcessed", totalProcessed);
+        finalResult.put("totalSavedPrices", totalSaved);
+        finalResult.put("results", allResults);
+
+        return finalResult;
+    }
+
+    /**
+     * 사이트별 가격 정보를 SalePrice 엔티티에 저장
+     */
+    private int saveSalePrices(Product product, Map<String, String> sitePriceMap) {
 
 
-        // 1) Selenium으로 페이지를 로드한 뒤 Jsoup Document로 반환
-        Document doc = fetchService.fetchBySelenium(url);
+        List<SalePrice> salePrices = new ArrayList<>();
+        int savedCount = 0;
 
-        // 2) <title> 태그 추출
-        String title = doc.title();
+        // 쿠팡 가격 저장
+        if (sitePriceMap.containsKey("쿠팡") && !sitePriceMap.get("쿠팡").equals("정보 없음")) {
+            try {
+                int price = parsePrice(sitePriceMap.get("쿠팡"));
+                SalePrice salePrice = new SalePrice();
+                salePrice.setProduct(product);
+                salePrice.setPrice(price);
+                salePrice.setSiteName(SiteName.COUPANG);
+                salePrices.add(salePrice);
+                savedCount++;
+            } catch (NumberFormatException e) {
+                System.err.println("쿠팡 가격 파싱 실패: " + sitePriceMap.get("쿠팡"));
+            }
+        }
 
-        // 3) 사이트별 판매가 정보 추출 (쿠팡, G마켓, 11번가, 옥션 등)
-        Map<String, String> sitePriceMap = extractSitePriceMapping(doc);
+        // G마켓 가격 저장
+        if (sitePriceMap.containsKey("G마켓") && !sitePriceMap.get("G마켓").equals("정보 없음")) {
+            try {
+                int price = parsePrice(sitePriceMap.get("G마켓"));
+                SalePrice salePrice = new SalePrice();
+                salePrice.setProduct(product);
+                salePrice.setPrice(price);
+                salePrice.setSiteName(SiteName.GMARKET);
+                salePrices.add(salePrice);
+                savedCount++;
+            } catch (NumberFormatException e) {
+                System.err.println("G마켓 가격 파싱 실패: " + sitePriceMap.get("G마켓"));
+            }
+        }
 
-        // 4) 결과 맵에 저장
-        Map<String, Object> result = new HashMap<>();
-        result.put("title", title);
-        result.put("sitePrices", sitePriceMap);
-        result.put("totalSites", sitePriceMap.size());
+        // 11번가 가격 저장
+        if (sitePriceMap.containsKey("11번가") && !sitePriceMap.get("11번가").equals("정보 없음")) {
+            try {
+                int price = parsePrice(sitePriceMap.get("11번가"));
+                SalePrice salePrice = new SalePrice();
+                salePrice.setProduct(product);
+                salePrice.setPrice(price);
+                salePrice.setSiteName(SiteName.ELEVENSTREET);
+                salePrices.add(salePrice);
+                savedCount++;
+            } catch (NumberFormatException e) {
+                System.err.println("11번가 가격 파싱 실패: " + sitePriceMap.get("11번가"));
+            }
+        }
 
-        // 개별 사이트 가격 정보도 포함
-        result.put("쿠팡", sitePriceMap.getOrDefault("쿠팡", "정보 없음"));
-        result.put("G마켓", sitePriceMap.getOrDefault("G마켓", "정보 없음"));
-        result.put("11번가", sitePriceMap.getOrDefault("11번가", "정보 없음"));
-        result.put("옥션", sitePriceMap.getOrDefault("옥션", "정보 없음"));
+        // 옥션 가격 저장
+        if (sitePriceMap.containsKey("옥션") && !sitePriceMap.get("옥션").equals("정보 없음")) {
+            try {
+                int price = parsePrice(sitePriceMap.get("옥션"));
+                SalePrice salePrice = new SalePrice();
+                salePrice.setProduct(product);
+                salePrice.setPrice(price);
+                salePrice.setSiteName(SiteName.BUNGAE);
+                salePrices.add(salePrice);
+                savedCount++;
+            } catch (NumberFormatException e) {
+                System.err.println("옥션 가격 파싱 실패: " + sitePriceMap.get("옥션"));
+            }
+        }
 
-        return result;
+        // 데이터베이스에 저장
+        if (!salePrices.isEmpty()) {
+            salePriceRepository.saveAll(salePrices);
+        }
+
+        return savedCount;
+    }
+
+    /**
+     * 가격 문자열을 정수로 파싱하는 헬퍼 메서드
+     * "369,270" -> 369270
+     */
+    private int parsePrice(String priceStr) {
+        if (priceStr == null || priceStr.trim().isEmpty()) {
+            throw new NumberFormatException("가격 정보가 없습니다.");
+        }
+
+        // 숫자가 아닌 문자 제거 (쉼표, 원, 공백 등)
+        String cleanPrice = priceStr.replaceAll("[^0-9]", "");
+
+        if (cleanPrice.isEmpty()) {
+            throw new NumberFormatException("유효한 가격 정보를 찾을 수 없습니다: " + priceStr);
+        }
+
+        return Integer.parseInt(cleanPrice);
     }
 
     private Map<String, String> extractSitePriceMapping(Document doc) {

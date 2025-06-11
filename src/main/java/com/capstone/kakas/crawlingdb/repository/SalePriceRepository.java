@@ -17,5 +17,4 @@ import java.util.Optional;
 @Repository
 public interface SalePriceRepository extends JpaRepository<SalePrice, Long> {
     Optional<SalePrice> findTopByProductOrderByCreatedAtDesc(Product product);
-
 }

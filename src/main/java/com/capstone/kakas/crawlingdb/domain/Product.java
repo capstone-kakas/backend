@@ -24,7 +24,7 @@ public class Product {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 100)
+    @Column(length = 255)
     private String saleUrl;
 
     @Column(name = "bunjang_url", length = 255)
@@ -39,4 +39,8 @@ public class Product {
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "used_price_id")
     private List<UsedPrice> usedPrices = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sale_price_id")
+    private List<SalePrice> salePrices = new ArrayList<>();
 }
