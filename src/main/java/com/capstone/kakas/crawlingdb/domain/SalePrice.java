@@ -4,6 +4,7 @@ import com.capstone.kakas.crawlingdb.domain.enums.SiteName;
 import com.capstone.kakas.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "sale_price")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
