@@ -1,6 +1,7 @@
 package com.capstone.kakas.crawlingdb.controller;
 
 import com.capstone.kakas.apiPayload.ApiResponse;
+import com.capstone.kakas.crawlingdb.dto.priceDto.SalePriceResultDto;
 import com.capstone.kakas.crawlingdb.dto.priceDto.UsedPriceListDto;
 import com.capstone.kakas.crawlingdb.dto.priceDto.UsedPriceResultDto;
 import com.capstone.kakas.crawlingdb.service.ProductService;
@@ -22,12 +23,19 @@ public class PriceController {
 
     @GetMapping("/salePrices")
     @Operation(summary = "단일 판매가 조회 api",description = "제공된 상품이름으로 가격 검색")
-    public ApiResponse<String> getSalePrice(
+    public ApiResponse<SalePriceResultDto> getSalePrice(
             @RequestParam("productName") String productName
     ) {
-        String response = productService.getSalePrice(productName);
+        SalePriceResultDto response = productService.getSalePrice(productName);
         return ApiResponse.onSuccess(response);
     }
+
+
+
+
+
+
+
 
     @GetMapping("/usedPrices")
     @Operation(summary = "단일 중고거래가 조회 api",description = "제공된 상품이름으로 가격 검색")
