@@ -24,8 +24,8 @@ public class SalePrice extends BaseEntity {
     private Long id;
 
 
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
+    @Column
+    private int price;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
@@ -33,4 +33,12 @@ public class SalePrice extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private SiteName siteName;
+
+    public void setPrice(int price) {
+        this.price = price;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
 }

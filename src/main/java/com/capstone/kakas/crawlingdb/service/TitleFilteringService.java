@@ -440,9 +440,18 @@ public List<UsedPriceResultDto> cosineSimilarityFiltering(List<CrawlingResultDto
                     Product product = productOpt.get();
 
                     // UsedPrice 엔티티 생성 및 저장
-                    UsedPrice usedPrice = new UsedPrice();
-                    usedPrice.setPrice(avgPrice);
-                    usedPrice.setProduct(product);
+//                    UsedPrice usedPrice = new UsedPrice();
+//                    usedPrice.setPrice(avgPrice);
+//                    usedPrice.setProduct(product);
+
+                    UsedPrice usedPrice = UsedPrice.builder()
+                            .price(avgPrice)
+                            .product(product)
+                            .minPrice(minPrice)
+                            .maxPrice(maxPrice)
+                            .sampleCount(prices.size())
+                            .build();
+
 
                     usedPriceRepository.save(usedPrice);
 
