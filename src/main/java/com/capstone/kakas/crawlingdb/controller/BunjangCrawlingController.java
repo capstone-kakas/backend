@@ -1,9 +1,8 @@
 package com.capstone.kakas.crawlingdb.controller;
 
 import com.capstone.kakas.apiPayload.ApiResponse;
-import com.capstone.kakas.crawlingdb.domain.UsedPrice;
 import com.capstone.kakas.crawlingdb.dto.CrawlingResultDto;
-import com.capstone.kakas.crawlingdb.dto.UsedPriceResultDto;
+import com.capstone.kakas.crawlingdb.dto.priceDto.UsedPriceResultDto;
 import com.capstone.kakas.crawlingdb.dto.request.ProductCrawlingDto;
 import com.capstone.kakas.crawlingdb.service.BunjangCrawlingService;
 import com.capstone.kakas.crawlingdb.service.TitleFilteringService;

@@ -34,7 +34,10 @@ public enum ErrorStatus implements BaseErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT4001", "해당상품이 없습니다."),
 
     //크롤링
-    URL_NOT_FOUND(HttpStatus.NOT_FOUND, "CRAWLING4001", "URL이 없습니다");
+    URL_NOT_FOUND(HttpStatus.NOT_FOUND, "CRAWLING4001", "URL이 없습니다"),
+    USED_PRICE_NOT_FOUND(HttpStatus.NOT_FOUND, "PRICE4001", "상품에 해당하는 중고가가 없습니다."),
+    SALE_PRICE_NOT_FOUND(HttpStatus.NOT_FOUND, "PRICE4001", "상품에 해당하는 판매가가 없습니다.");
+
 
     private final HttpStatus httpStatus;
     private final String code;

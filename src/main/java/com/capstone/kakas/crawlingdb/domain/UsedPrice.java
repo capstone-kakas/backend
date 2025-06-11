@@ -25,6 +25,12 @@ public class UsedPrice extends BaseEntity {
 
     @Column(nullable = false)
     private int price;
+    @Column(nullable = false)
+    private int sampleCount;
+    @Column(nullable = false)
+    private int minPrice;
+    @Column(nullable = false)
+    private int maxPrice;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)

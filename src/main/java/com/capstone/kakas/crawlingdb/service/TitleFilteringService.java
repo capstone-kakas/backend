@@ -2,14 +2,12 @@ package com.capstone.kakas.crawlingdb.service;
 
 import com.capstone.kakas.crawlingdb.domain.*;
 import com.capstone.kakas.crawlingdb.dto.CrawlingResultDto;
-import com.capstone.kakas.crawlingdb.dto.FilteredResultDto;
-import com.capstone.kakas.crawlingdb.dto.UsedPriceResultDto;
+import com.capstone.kakas.crawlingdb.dto.priceDto.UsedPriceResultDto;
 import com.capstone.kakas.crawlingdb.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.commons.text.similarity.CosineDistance;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -440,9 +438,18 @@ public List<UsedPriceResultDto> cosineSimilarityFiltering(List<CrawlingResultDto
                     Product product = productOpt.get();
 
                     // UsedPrice 엔티티 생성 및 저장
-                    UsedPrice usedPrice = new UsedPrice();
-                    usedPrice.setPrice(avgPrice);
-                    usedPrice.setProduct(product);
+//                    UsedPrice usedPrice = new UsedPrice();
+//                    usedPrice.setPrice(avgPrice);
+//                    usedPrice.setProduct(product);
+
+                    UsedPrice usedPrice = UsedPrice.builder()
+                            .price(avgPrice)
+                            .product(product)
+                            .minPrice(minPrice)
+                            .maxPrice(maxPrice)
+                            .sampleCount(prices.size())
+                            .build();
+
 
                     usedPriceRepository.save(usedPrice);
 
