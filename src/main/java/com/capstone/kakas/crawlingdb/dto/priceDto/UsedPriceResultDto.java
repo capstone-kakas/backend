@@ -1,8 +1,6 @@
-package com.capstone.kakas.crawlingdb.dto;
+package com.capstone.kakas.crawlingdb.dto.priceDto;
 
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
