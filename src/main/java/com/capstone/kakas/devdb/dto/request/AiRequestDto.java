@@ -32,4 +32,19 @@ public class AiRequestDto {
         private String status;
         private List<List<String>> chat;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class chatSellerDto {
+        private String question;
+        private String seller_chat;
+        private String chatTitle;
+        private String chatContent;
+        private String price;
+        private String status;
+        private String productName;
+    }
 }

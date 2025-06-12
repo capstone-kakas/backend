@@ -49,7 +49,7 @@ public class ChatController {
     //채팅방 첫질문 추천 끝
     // ai api post /recommend
     @GetMapping("/recommend/{chatRoomId}")
-    @Operation(summary = "채팅방생성 직후 추천 질문 - 분석",description = "채팅방 id를 통해 채팅방의 data를 ai 서버에 분석요청 후 추천답변 반환")
+    @Operation(summary = "채팅방생성 직후 추천 질문 - 분석 / 연결완료",description = "채팅방 id를 통해 채팅방의 data를 ai 서버에 분석요청 후 추천답변 반환")
     public ApiResponse<List<String>> recommendQuestion(
             @PathVariable("chatRoomId") Long chatRoomId
     ) {
@@ -61,6 +61,17 @@ public class ChatController {
 
 
 
+
+    //chat-seller
+    //진위여부판단
+    @PostMapping("/isReal")
+    @Operation(summary = "진위여부판단 API",description = "채팅방id와 1개의 메세지 string 통해 ai 분석을 반환")
+    public ApiResponse<String> chatSeller(
+            @RequestBody ChatRoomRequestDto.chatSellerDto request
+    ){
+        String response = chatRoomService.chatSeller(request);
+        return ApiResponse.onSuccess(response);
+    }
 
 
 
