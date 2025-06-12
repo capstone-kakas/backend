@@ -17,6 +17,7 @@ public class AiRequestDto {
         private String chatContent;
         private String price;
         private String status;
+        private List<String> chat;
     }
 
     @Getter
@@ -25,10 +26,31 @@ public class AiRequestDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class messageAnalysisRequestDto {
+        private String productName;
+        private List<String> chat;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class chatSellerDto {
+        private String question;
+        private String seller_chat;
         private String chatTitle;
         private String chatContent;
         private String price;
         private String status;
-        private List<List<String>> chat;
+        private String productName;
+    }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class chatRequestDto {
+        private String question;
     }
 }

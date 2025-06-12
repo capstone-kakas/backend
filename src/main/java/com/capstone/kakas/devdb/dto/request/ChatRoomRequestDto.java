@@ -37,6 +37,18 @@ public class ChatRoomRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class chatSellerDto {
+        private Long chatRoomId;
+        private String seller_chat;
+        private String question;
+    }
+
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class messageAnalysisDto{
         private Long chatRoomId;
         private List<messageRequestDto> message;
@@ -50,6 +62,15 @@ public class ChatRoomRequestDto {
         private String text;
         private String sender;
         private String time;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class chatDto{
+        private Long chatRoomId;
+        private String question;
     }
 
 }
