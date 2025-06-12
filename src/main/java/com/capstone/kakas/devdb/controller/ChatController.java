@@ -78,7 +78,7 @@ public class ChatController {
     //채팅방 메세지 분석 controller
     // recommend-chat
     @PostMapping("/message")
-    @Operation(summary = "채팅방 메세지 분석 API ai->recommend-chat / 연결완료",description = "채팅방id와 메세지를 통해 ai 분석을 반환")
+    @Operation(summary = "채팅방 메세지에 따른 추천답변 API ai->recommend-chat / 연결완료",description = "채팅방id와 메세지를 통해 ai 분석을 반환")
     public ApiResponse<List<String>> messageAnalysis(
             @RequestBody ChatRoomRequestDto.messageAnalysisDto request
     ){
@@ -87,11 +87,20 @@ public class ChatController {
     }
 
     @PostMapping("/chat")
-    @Operation(summary = "사용자 질문만 받아서 웹 검색해서 답장 API ai->chat",description = "question만 보내서 string response")
+    @Operation(summary = "사용자 질문만 받아서 웹 검색해서 답장 API ai->chat / 연결완료",description = "question만 보내서 string response")
     public ApiResponse<String> chatAnalysis(
             @RequestBody ChatRoomRequestDto.chatDto request
     ){
         String response = chatRoomService.chatAnalysis(request);
+        return ApiResponse.onSuccess(response);
+    }
+
+    @PostMapping("/chat/eval")
+    @Operation(summary = "사용자 질문만 받아서 웹 검색해서 답장 API의 평가부분 ai->chat-eval / 연결완료",description = "question만 보내서 string response")
+    public ApiResponse<String> chatEvalAnalysis(
+            @RequestBody ChatRoomRequestDto.chatDto request
+    ){
+        String response = chatRoomService.chatEvalAnalysis(request);
         return ApiResponse.onSuccess(response);
     }
 

@@ -32,13 +32,13 @@ public class ChatRoomService {
     private final ChatMessageRepository chatMessageRepository;
     private final WebClient webClient;
 
-    // no
-    private static final String AI_RECOMMEND_API = "http://52.63.203.92:3000/recommend";
     //ok
+    private static final String AI_RECOMMEND_API = "http://52.63.203.92:3000/recommend";
     private static final String AI_INIT_API = "http://52.63.203.92:3000/recommend";
     private static final String AI_CHAT_SELLER = "http://52.63.203.92:3000/chat-seller";
     private static final String AI_RECOMMEND_CHAT_API = "http://52.63.203.92:3000/recommend-chat";
     private static final String AI_CHAT_API = "http://52.63.203.92:3000/chat";
+    private static final String AI_CHAT_EVAL_API = "http://52.63.203.92:3000/chat-eval";
 
     // 카테고리별 상품 데이터 - ProductCategory enum 활용
     private static final Map<ProductCategory, List<String>> CATEGORY_PRODUCTS = Map.of(
@@ -580,6 +580,7 @@ public class ChatRoomService {
     // post /chat
     public String chatAnalysis(ChatRoomRequestDto.chatDto request){
 
+
         // ChatRoom 조회
         ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
                 .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
@@ -595,6 +596,52 @@ public class ChatRoomService {
             // AI API에서 단순 String을 반환받는 경우
             String aiResponse = webClient.post()
                     .uri(AI_CHAT_API)
+                    .header("Content-Type", "application/json")
+                    .bodyValue(aiRequestDto)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                        return Mono.error(new RuntimeException("AI API 클라이언트 오류: " + response.statusCode()));
+                    })
+                    .onStatus(HttpStatusCode::is5xxServerError, response -> {
+                        return Mono.error(new RuntimeException("AI API 서버 오류: " + response.statusCode()));
+                    })
+                    .bodyToMono(String.class)  // String.class로 변경
+                    .timeout(Duration.ofMinutes(3))
+                    .block();
+
+            if (aiResponse != null && !aiResponse.trim().isEmpty()) {
+                analysisResult = aiResponse;
+            } else {
+                analysisResult = "분석 결과를 받을 수 없습니다.";
+            }
+
+        } catch (Exception e) {
+            analysisResult = "AI 분석 서비스 일시 중단 - 분석결과 temp";
+            System.err.println("AI API 호출 실패: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return analysisResult; // String 반환
+    }
+
+    //post /chat-eval
+    public String chatEvalAnalysis(ChatRoomRequestDto.chatDto request){
+
+        // ChatRoom 조회
+        ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
+                .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
+
+        AiRequestDto.chatRequestDto aiRequestDto = AiRequestDto.chatRequestDto.builder()
+                .question(request.getQuestion())
+                .build();
+
+
+        String analysisResult;
+
+        try {
+            // AI API에서 단순 String을 반환받는 경우
+            String aiResponse = webClient.post()
+                    .uri(AI_CHAT_EVAL_API)
                     .header("Content-Type", "application/json")
                     .bodyValue(aiRequestDto)
                     .retrieve()
