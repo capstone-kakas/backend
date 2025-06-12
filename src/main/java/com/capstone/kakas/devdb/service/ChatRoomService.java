@@ -37,6 +37,7 @@ public class ChatRoomService {
     //ok
     private static final String AI_INIT_API = "http://52.63.203.92:3000/recommend";
     private static final String AI_CHAT_SELLER = "http://52.63.203.92:3000/chat-seller";
+    private static final String AI_RECOMMEND_CHAT_API = "http://52.63.203.92:3000/recommend-chat";
 
     // 카테고리별 상품 데이터 - ProductCategory enum 활용
     private static final Map<ProductCategory, List<String>> CATEGORY_PRODUCTS = Map.of(
@@ -311,45 +312,35 @@ public class ChatRoomService {
     }
 
     @Transactional
-    //특정 채팅방의 메세지를 분석하는 service
-//    public ChatRoomResponseDto.messageAnalysisResultDto messageAnalysis(ChatRoomRequestDto.messageAnalysisDto request){
     public List<String> messageAnalysis(ChatRoomRequestDto.messageAnalysisDto request){
 
         // ChatRoom 조회 id로
         ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomId())
                 .orElseThrow(() -> new TempHandler(ErrorStatus.CHATROOM_NOT_FOUND));
 
-
         List<ChatRoomRequestDto.messageRequestDto> messages = request.getMessage();
 
-        List<List<String>> chatMessages = messages.stream()
-                .map(m -> Arrays.asList(m.getSender(), m.getText()))
+        // AI 서버 요청 형식에 맞게 String 리스트로 변환
+        // "발신자:메시지" 형태로 변환
+        List<String> chatStrings = messages.stream()
+                .map(m -> m.getSender() + ":" + m.getText())
                 .collect(Collectors.toList());
 
-        String resultMessage = messages.stream()
-                .map(m -> m.getSender() + ":" + m.getText())
-                .collect(Collectors.joining(", "));
+        // DB 저장용 전체 메시지 문자열
+        String resultMessage = String.join(", ", chatStrings);
 
-
-        // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
+        // AI 요청 DTO 생성
         AiRequestDto.messageAnalysisRequestDto aiRequestDto = AiRequestDto.messageAnalysisRequestDto.builder()
-                .chatTitle(chatRoom.getTitle())
-                .chatContent(chatRoom.getContent())
-                .price(chatRoom.getPrice())
-                .status(chatRoom.getStatus())
-                .chat(chatMessages)
+                .productName(chatRoom.getProduct().getName())
+                .chat(chatStrings) // List<String>로 전달
                 .build();
-//        aiRequestDto를 ai api로 전송 후 analysisResult 받아오기
 
-
-
-
-        List<String> analysisResultList; // List<String>으로 변경
-        String analysisResultString; // DB 저장용은 여전히 String
+        List<String> analysisResultList;
+        String analysisResultString;
 
         try {
             AiApiResponse aiResponse = webClient.post()
-                    .uri(AI_RECOMMEND_API)
+                    .uri(AI_RECOMMEND_CHAT_API)
                     .header("Content-Type", "application/json")
                     .bodyValue(aiRequestDto)
                     .retrieve()
@@ -364,8 +355,10 @@ public class ChatRoomService {
                     .block();
 
             if (aiResponse != null && aiResponse.getResponse() != null && !aiResponse.getResponse().isEmpty()) {
-                analysisResultList = aiResponse.getResponse(); // List<String> 직접 사용
-                analysisResultString = aiResponse.getAnalysis(); // DB 저장용은 String으로 변환
+                analysisResultList = aiResponse.getResponse();
+                // analysis 필드가 String이면 그대로, List<String>이면 join 처리
+                analysisResultString = aiResponse.getAnalysis() != null ?
+                        aiResponse.getAnalysis() : String.join(", ", aiResponse.getResponse());
             } else {
                 analysisResultList = Arrays.asList("분석 결과를 받을 수 없습니다.");
                 analysisResultString = "분석 결과를 받을 수 없습니다.";
@@ -374,11 +367,10 @@ public class ChatRoomService {
         } catch (Exception e) {
             analysisResultList = Arrays.asList("AI 분석 서비스 일시 중단 - 분석결과 temp");
             analysisResultString = "AI 분석 서비스 일시 중단 - 분석결과 temp";
-            System.err.println("AI API 호출 실패: " + e.getMessage());
-            e.printStackTrace();
+            //log.error("AI API 호출 실패: {}", e.getMessage(), e); // 로깅 개선
         }
 
-        // ChatMessage 생성 및 저장 (기존과 동일)
+        // ChatMessage 생성 및 저장
         ChatMessage message = ChatMessage.builder()
                 .message(resultMessage)
                 .chatRoom(chatRoom)
@@ -390,15 +382,15 @@ public class ChatRoomService {
             throw new RuntimeException("ChatMessage 저장 실패: ID가 생성되지 않았습니다.");
         }
 
-        // ChatAnalysis 저장 (String 형태로 저장)
+        // ChatAnalysis 저장
         ChatAnalysis chatAnalysis = ChatAnalysis.builder()
-                .analysis(analysisResultString) // String으로 저장
+                .analysis(analysisResultString)
                 .chatMessage(savedMessage)
                 .build();
 
         chatAnalysisRepository.save(chatAnalysis);
 
-        return analysisResultList; // List<String> 반환
+        return analysisResultList;
     }
 
 
@@ -478,17 +470,19 @@ public class ChatRoomService {
                 .map(m -> Arrays.asList(m.getSender(), m.getText()))
                 .collect(Collectors.toList());
 
-        String resultMessage = messages.stream()
+        // AI 서버 요청 형식에 맞게 String 리스트로 변환
+        // "발신자:메시지" 형태로 변환
+        List<String> chatStrings = messages.stream()
                 .map(m -> m.getSender() + ":" + m.getText())
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.toList());
 
-        // ai 앤드포인트를 기준으로 분석 결과 가져오기 아직 미구현
+        // DB 저장용 전체 메시지 문자열
+        String resultMessage = String.join(", ", chatStrings);
+
+        // AI 요청 DTO 생성
         AiRequestDto.messageAnalysisRequestDto aiRequestDto = AiRequestDto.messageAnalysisRequestDto.builder()
-                .chatTitle(chatRoom.getTitle())
-                .chatContent(chatRoom.getContent())
-                .price(chatRoom.getPrice())
-                .status(chatRoom.getStatus())
-                .chat(chatMessages)
+                .productName(chatRoom.getProduct().getName())
+                .chat(chatStrings) // List<String>로 전달
                 .build();
 
         // 비동기 AI API 호출

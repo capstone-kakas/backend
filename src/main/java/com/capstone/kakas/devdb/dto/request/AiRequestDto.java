@@ -26,11 +26,8 @@ public class AiRequestDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class messageAnalysisRequestDto {
-        private String chatTitle;
-        private String chatContent;
-        private String price;
-        private String status;
-        private List<List<String>> chat;
+        private String productName;
+        private List<String> chat;
     }
 
     @Getter

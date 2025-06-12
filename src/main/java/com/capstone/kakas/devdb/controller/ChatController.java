@@ -22,7 +22,7 @@ public class ChatController {
 
     //채팅방 생성 controller
     @PostMapping
-    @Operation(summary = "채팅방 생성 API",description = "상품이 결정되기 전의 채팅방 생성 / response로 상품4개 추천")
+    @Operation(summary = "채팅방 생성 API / 완료",description = "상품이 결정되기 전의 채팅방 생성 / response로 상품4개 추천")
     public ApiResponse<ChatRoomResponseDto.addChatRoomDto> CreateChatRoom(
             @RequestBody ChatRoomRequestDto.createChatRoomDto request
     ){
@@ -34,7 +34,7 @@ public class ChatController {
 
     //채팅방 상품 설정 controller
     @PutMapping
-    @Operation(summary = "채팅방 상품 결정 API",description = "채팅방 생성 Api 사용 후 상품 결정하는 api / 상품이름를 채팅방에 설정")
+    @Operation(summary = "채팅방 상품 결정 API / 완료",description = "채팅방 생성 Api 사용 후 상품 결정하는 api / 상품이름를 채팅방에 설정")
     public ApiResponse<ChatRoomResponseDto.ChatRoomAssignProductDto> assignProduct(
             @RequestBody ChatRoomRequestDto.ChatRoomAssignProductDto request
     ) {
@@ -65,7 +65,7 @@ public class ChatController {
     //chat-seller
     //진위여부판단
     @PostMapping("/isReal")
-    @Operation(summary = "진위여부판단 API",description = "채팅방id와 1개의 메세지 string 통해 ai 분석을 반환")
+    @Operation(summary = "진위여부판단 API / 연결완료",description = "채팅방id와 1개의 메세지 string 통해 ai 분석을 반환")
     public ApiResponse<String> chatSeller(
             @RequestBody ChatRoomRequestDto.chatSellerDto request
     ){
@@ -76,8 +76,9 @@ public class ChatController {
 
 
     //채팅방 메세지 분석 controller
+    // recommend-chat
     @PostMapping("/message")
-    @Operation(summary = "채팅방 메세지 분석 API",description = "채팅방id와 메세지를 통해 ai 분석을 반환")
+    @Operation(summary = "채팅방 메세지 분석 API ai->recommend-chat / 연결완료",description = "채팅방id와 메세지를 통해 ai 분석을 반환")
     public ApiResponse<List<String>> messageAnalysis(
             @RequestBody ChatRoomRequestDto.messageAnalysisDto request
     ){
