@@ -33,12 +33,12 @@ public class BunjangCrawlingController {
         // 크롤링된 판매제목
         // 1. exclude keyword filtering
         List<CrawlingResultDto> excludeFilteredResult = titleFilteringService.filteringExcludeKeyword(crawlingResult);
-        // 2. include keyword filtering
-        List<CrawlingResultDto> includeFilteredResult = titleFilteringService.filteringIncludeKeyword(excludeFilteredResult);
-        // 3. alias replacement
-        List<CrawlingResultDto> replaceAliasResult = titleFilteringService.replaceAlias(includeFilteredResult);
+        // 2. alias replacement
+        List<CrawlingResultDto> replaceAliasResult = titleFilteringService.replaceAlias(excludeFilteredResult);
+        // 3. include keyword filtering
+        List<CrawlingResultDto> includeFilteredResult = titleFilteringService.filteringIncludeKeyword(replaceAliasResult);
         // 4. 유사도비교 filtering 및 저장
-        List<UsedPriceResultDto> filteredResult = titleFilteringService.cosineSimilarityFiltering(replaceAliasResult);
+        List<UsedPriceResultDto> filteredResult = titleFilteringService.cosineSimilarityFiltering(includeFilteredResult);
 
 
         return ApiResponse.onSuccess(filteredResult);
