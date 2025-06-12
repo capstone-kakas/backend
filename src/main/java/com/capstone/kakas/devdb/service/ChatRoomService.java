@@ -32,8 +32,9 @@ public class ChatRoomService {
     private final ChatMessageRepository chatMessageRepository;
     private final WebClient webClient;
 
-
+    // no
     private static final String AI_RECOMMEND_API = "http://52.63.203.92:3000/recommend";
+    //ok
     private static final String AI_INIT_API = "http://52.63.203.92:3000/recommend";
 
 
@@ -483,6 +484,7 @@ public class ChatRoomService {
                 .chatContent(chatRoom.getContent())
                 .price(chatRoom.getPrice())
                 .status(chatRoom.getStatus())
+                .chat(new ArrayList<>())
 //                .deliveryFee(chatRoom.getDeliveryFee())
                 .build();
 

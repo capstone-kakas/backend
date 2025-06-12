@@ -46,7 +46,7 @@ public class ChatController {
 
 
 
-    //채팅방 첫질문 추천
+    //채팅방 첫질문 추천 끝
     // ai api post /recommend
     @GetMapping("/recommend/{chatRoomId}")
     @Operation(summary = "채팅방생성 직후 추천 질문 - 분석",description = "채팅방 id를 통해 채팅방의 data를 ai 서버에 분석요청 후 추천답변 반환")

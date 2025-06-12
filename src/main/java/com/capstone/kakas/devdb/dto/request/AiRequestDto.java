@@ -17,6 +17,7 @@ public class AiRequestDto {
         private String chatContent;
         private String price;
         private String status;
+        private List<String> chat;
     }
 
     @Getter
