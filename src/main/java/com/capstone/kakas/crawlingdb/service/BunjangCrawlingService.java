@@ -42,6 +42,7 @@ public class BunjangCrawlingService {
 
         List<ProductCrawlingDto> mappingList = products.stream()
                 .filter(product -> product.getBunjangUrl() != null && !product.getBunjangUrl().trim().isEmpty())
+//                .filter(product -> product.getId() == 21)  // 추가된 필터 조건
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
@@ -573,6 +574,56 @@ public class BunjangCrawlingService {
     /**
      * 유효한 가격인지 검증 (개선된 버전)
      */
+//    private boolean isValidPrice(String text) {
+//        if (text == null || text.trim().isEmpty()) {
+//            return false;
+//        }
+//
+//        text = text.trim().replaceAll("[\"']", ""); // 따옴표 제거
+//
+//        // 시간 패턴 체크 (가격이 아님)
+//        if (isTimePattern(text)) {
+//            return false;
+//        }
+//
+//        // 배송 관련 패턴 체크 (가격이 아님)
+//        if (isDeliveryPattern(text)) {
+//            return false;
+//        }
+//
+//        // 유효한 가격 패턴들
+//        String[] validPricePatterns = {
+//                "^\\d{1,3}(?:,\\d{3})*원$",         // 1,000원
+//                "^\\d{1,3}(?:,\\d{3})*만원$",       // 10만원
+//                "^\\d+만\\s*\\d*천?원$",            // 10만 5천원
+//                "^\\d+천원$",                      // 5천원
+//                "^\\d{1,3}(?:,\\d{3})*$",          // 숫자만 (1000, 10000 등)
+//                "^₩\\s*\\d{1,3}(?:,\\d{3})*$"      // ₩1000
+//        };
+//
+//        for (String pattern : validPricePatterns) {
+//            if (text.matches(pattern)) {
+//                // 숫자만 있는 경우 최소값 체크 (너무 작은 숫자는 가격이 아닐 가능성)
+//                if (text.matches("^\\d+$")) {
+//                    try {
+//                        int price = Integer.parseInt(text.replaceAll(",", ""));
+//                        if (price < 300000 || price > 900000) {
+//                            return false;
+//                        }
+//                        return price >= 50000; // 최소 5만원
+//                    } catch (NumberFormatException e) {
+//                        return false;
+//                    }
+//                }
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    }
+    /**
+     * 유효한 가격인지 검증 (모든 가격 패턴에 범위 체크 적용)
+     */
     private boolean isValidPrice(String text) {
         if (text == null || text.trim().isEmpty()) {
             return false;
@@ -602,20 +653,62 @@ public class BunjangCrawlingService {
 
         for (String pattern : validPricePatterns) {
             if (text.matches(pattern)) {
-                // 숫자만 있는 경우 최소값 체크 (너무 작은 숫자는 가격이 아닐 가능성)
-                if (text.matches("^\\d+$")) {
-                    try {
-                        int price = Integer.parseInt(text.replaceAll(",", ""));
-                        return price >= 50000; // 최소 5만원
-                    } catch (NumberFormatException e) {
-                        return false;
-                    }
+                // 모든 유효한 패턴에 대해 가격 범위 체크 적용
+                try {
+                    int priceValue = extractPriceValue(text);
+                    // 5만원~90만원 범위 체크
+                    return priceValue >= 50000;
+                } catch (Exception e) {
+                    log.debug("가격 추출 실패: {}", text);
+                    return false;
                 }
-                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * 가격 문자열에서 실제 숫자 값을 추출
+     */
+    private int extractPriceValue(String priceText) {
+        // 만원 단위 처리
+        if (priceText.contains("만원")) {
+            String numberPart = priceText.replaceAll("[^0-9]", "");
+            if (!numberPart.isEmpty()) {
+                return Integer.parseInt(numberPart) * 10000;
+            }
+        }
+
+        // 천원 단위 처리
+        if (priceText.contains("천원") && !priceText.contains("만")) {
+            String numberPart = priceText.replaceAll("[^0-9]", "");
+            if (!numberPart.isEmpty()) {
+                return Integer.parseInt(numberPart) * 1000;
+            }
+        }
+
+        // "10만 5천원" 형태 처리
+        if (priceText.contains("만") && priceText.contains("천")) {
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+)만\\s*(\\d*)천?원?");
+            java.util.regex.Matcher matcher = pattern.matcher(priceText);
+            if (matcher.find()) {
+                int manValue = Integer.parseInt(matcher.group(1)) * 10000;
+                String chunPart = matcher.group(2);
+                int chunValue = chunPart.isEmpty() ? 0 : Integer.parseInt(chunPart) * 1000;
+                return manValue + chunValue;
+            }
+        }
+
+        // 일반적인 숫자 + 원 형태 (91,000원, 999,999원 등)
+        String cleanPrice = priceText.replaceAll("[^0-9,]", "");
+        cleanPrice = cleanPrice.replaceAll(",", "");
+
+        if (!cleanPrice.isEmpty()) {
+            return Integer.parseInt(cleanPrice);
+        }
+
+        throw new NumberFormatException("가격 추출 불가: " + priceText);
     }
 
     /**
