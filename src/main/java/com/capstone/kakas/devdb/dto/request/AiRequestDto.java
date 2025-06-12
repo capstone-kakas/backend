@@ -44,4 +44,13 @@ public class AiRequestDto {
         private String status;
         private String productName;
     }
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class chatRequestDto {
+        private String question;
+    }
 }

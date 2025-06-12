@@ -86,6 +86,15 @@ public class ChatController {
         return ApiResponse.onSuccess(response);
     }
 
+    @PostMapping("/chat")
+    @Operation(summary = "사용자 질문만 받아서 웹 검색해서 답장 API ai->chat",description = "question만 보내서 string response")
+    public ApiResponse<String> chatAnalysis(
+            @RequestBody ChatRoomRequestDto.chatDto request
+    ){
+        String response = chatRoomService.chatAnalysis(request);
+        return ApiResponse.onSuccess(response);
+    }
+
 
 
     @PostMapping("/message/async")

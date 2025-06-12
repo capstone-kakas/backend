@@ -64,4 +64,13 @@ public class ChatRoomRequestDto {
         private String time;
     }
 
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class chatDto{
+        private Long chatRoomId;
+        private String question;
+    }
+
 }
