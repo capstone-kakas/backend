@@ -110,26 +110,39 @@ public class ChatRoomService {
         Member newMember = memberRepository.findById(request.getMemberId())
                 .orElseThrow(() -> new TempHandler(ErrorStatus.MEMBER_NOT_FOUND));
 
-        // 요청된 제목을 기반으로, 유사도가 높은 상품 이름 상위 4개를 가져온다
-        List<String> suggestedProductNames = filteringProductName(request.getChatRoomTitle(), request.getCategory());
-
         ProductCategory category = ProductCategory.fromCode(request.getCategory());
 
-        ChatRoom chatRoom = ChatRoom.builder()
-                .member(newMember)
-                .title(request.getChatRoomTitle())
-                .content(request.getContent())
-                .category(category)
-                .deliveryFee(request.getDeliveryFee())
-                .seller(request.getSeller())
-                .price(request.getPrice())
-                .status(request.getStatus())
-                .build();
+        // 기존 채팅방이 있는지 확인 (여러 개 있을 수 있으므로 List로 조회)
+        List<ChatRoom> existingChatRooms = chatRoomRepository.findAllByTitle(request.getChatRoomTitle());
 
-        ChatRoom saved = chatRoomRepository.save(chatRoom);
+        ChatRoom chatRoom;
+        List<String> suggestedProductNames;
+
+        if (!existingChatRooms.isEmpty()) {
+            // 기존 채팅방이 있으면 첫 번째 것을 사용 (또는 다른 기준으로 선택)
+            chatRoom = existingChatRooms.get(0);
+            // 기존 채팅방의 카테고리를 기반으로 추천 상품 생성
+            suggestedProductNames = filteringProductName(chatRoom.getTitle(), chatRoom.getCategory().getCode());
+        } else {
+            // 새 채팅방 생성
+            suggestedProductNames = filteringProductName(request.getChatRoomTitle(), request.getCategory());
+
+            chatRoom = ChatRoom.builder()
+                    .member(newMember)
+                    .title(request.getChatRoomTitle())
+                    .content(request.getContent())
+                    .category(category)
+                    .deliveryFee(request.getDeliveryFee())
+                    .seller(request.getSeller())
+                    .price(request.getPrice())
+                    .status(request.getStatus())
+                    .build();
+
+            chatRoom = chatRoomRepository.save(chatRoom);
+        }
 
         return ChatRoomResponseDto.addChatRoomDto.builder()
-                .chatRoomId(saved.getId())
+                .chatRoomId(chatRoom.getId())
                 .suggestedProductNames(suggestedProductNames)
                 .build();
     }
