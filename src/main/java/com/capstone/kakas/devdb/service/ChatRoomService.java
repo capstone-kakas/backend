@@ -113,7 +113,7 @@ public class ChatRoomService {
         ProductCategory category = ProductCategory.fromCode(request.getCategory());
 
         // 기존 채팅방이 있는지 확인
-        ChatRoom existingChatRoom = chatRoomRepository.findByTitleAndSeller(request.getChatRoomTitle(), String.valueOf(request.getSeller()));
+        ChatRoom existingChatRoom = chatRoomRepository.findByTitleAndSeller(request.getChatRoomTitle(), request.getSeller());
 
         ChatRoom chatRoom;
         List<String> suggestedProductNames;
