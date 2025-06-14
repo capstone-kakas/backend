@@ -112,15 +112,15 @@ public class ChatRoomService {
 
         ProductCategory category = ProductCategory.fromCode(request.getCategory());
 
-        // 기존 채팅방이 있는지 확인 (여러 개 있을 수 있으므로 List로 조회)
-        List<ChatRoom> existingChatRooms = chatRoomRepository.findAllByTitle(request.getChatRoomTitle());
+        // 기존 채팅방이 있는지 확인
+        ChatRoom existingChatRoom = chatRoomRepository.findByTitleAndSeller(request.getChatRoomTitle(), request.getSeller());
 
         ChatRoom chatRoom;
         List<String> suggestedProductNames;
 
-        if (!existingChatRooms.isEmpty()) {
-            // 기존 채팅방이 있으면 첫 번째 것을 사용 (또는 다른 기준으로 선택)
-            chatRoom = existingChatRooms.get(0);
+        if (existingChatRoom != null) {
+            // 기존 채팅방이 있으면 기존 채팅방 사용
+            chatRoom = existingChatRoom;
             // 기존 채팅방의 카테고리를 기반으로 추천 상품 생성
             suggestedProductNames = filteringProductName(chatRoom.getTitle(), chatRoom.getCategory().getCode());
         } else {

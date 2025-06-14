@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByTitle(String chatRoomTitle);
     List<ChatRoom> findAllByTitle(String title);
+    ChatRoom findByTitleAndSeller(String title, Long seller);
 }
