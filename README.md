@@ -51,4 +51,4 @@ com.capstone.kakas
 ## SWAGGER
 https://13.125.148.205/swagger-ui/index.html#/
 (미구동중)
-![스크린샷 2025-06-22 오후 9.02.46.png](attachment:6c484841-6382-47ae-a239-31613c74b22a:d1357a31-a3eb-4351-b335-b7be6c33a6d7.png)
+![Image](https://github.com/user-attachments/assets/55b6acb2-bf53-4f57-8356-ca776f938c3f)
